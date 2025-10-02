@@ -1,0 +1,1243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Banafa's Daily Brief</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #121212;
+        }
+        .container {
+            max-width: 1200px;
+        }
+        .news-card {
+            min-height: 200px;
+        }
+        .message-box {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 50;
+        }
+        .drop-area {
+            border: 2px dashed #4B5563;
+            background-color: #1F2937;
+            transition: all 0.3s ease;
+        }
+        .drop-area.active {
+            border-color: #6366F1;
+            background-color: #111827;
+        }
+        .header-bg {
+            background: linear-gradient(135deg, #A855F7, #6D28D9);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+<body class="bg-gray-950 text-gray-200">
+
+    <!-- Message Box for Alerts -->
+    <div id="message-box" class="message-box p-4 bg-green-500 text-white rounded-lg shadow-xl hidden transition-all duration-300 ease-in-out">
+        Article added successfully!
+    </div>
+
+    <div class="container mx-auto p-4 md:p-8">
+        <!-- Header Section -->
+        <header class="text-center mb-12">
+            <div class="flex items-center justify-center mb-4">
+                <img src="https://placehold.co/60x60/8B5CF6/FFFFFF?text=Logo" alt="Banafa Logo" class="h-16 w-16 mr-4">
+                <h1 class="text-5xl md:text-6xl font-bold header-bg">Banafa's Daily Brief</h1>
+            </div>
+            <p class="text-lg md:text-xl text-gray-400">Your curated news, on your own terms.</p>
+        </header>
+
+        <!-- Filter and Add Section -->
+        <div class="mb-12 space-y-6 md:space-y-0 md:flex md:items-center md:space-x-4">
+            <div class="flex-grow">
+                <label for="tagFilter" class="block text-sm font-medium text-gray-400 mb-1">Filter by Tag</label>
+                <select id="tagFilter" class="w-full px-4 py-2 bg-gray-800 text-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+                    <!-- Options will be populated by JavaScript -->
+                </select>
+            </div>
+            <div class="relative flex-grow">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg class="h-5 w-5 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path>
+                    </svg>
+                </div>
+                <input type="text" id="searchInput" placeholder="Search by keyword..." class="w-full pl-10 pr-4 py-2 bg-gray-800 text-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+            </div>
+            <div class="flex space-x-2 flex-wrap">
+                 <button id="analyzeImpactBtn" class="w-full md:w-auto mt-2 md:mt-0 px-6 py-2 bg-purple-600 text-white font-medium rounded-xl hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors">
+                    Analyze Market Impact ✨
+                </button>
+                <button id="selectAllBtn" class="w-full md:w-auto mt-2 md:mt-0 px-6 py-2 bg-yellow-600 text-white font-medium rounded-xl hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition-colors">
+                    Select All
+                </button>
+                <button id="importBtn" class="w-full md:w-auto mt-2 md:mt-0 px-6 py-2 bg-teal-600 text-white font-medium rounded-xl hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-colors">
+                    Import
+                </button>
+                <button id="exportBtn" class="w-full md:w-auto mt-2 md:mt-0 px-6 py-2 bg-green-600 text-white font-medium rounded-xl hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors">
+                    Export
+                </button>
+                <button id="showAddFormBtn" class="w-full md:w-auto mt-2 md:mt-0 px-6 py-2 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors">
+                    Add New Article
+                </button>
+            </div>
+        </div>
+
+        <!-- Add News Form (Initially hidden) -->
+        <div id="addFormContainer" class="hidden bg-gray-800 p-6 md:p-8 rounded-2xl shadow-xl mb-12">
+            <h2 id="formTitle" class="text-2xl font-bold mb-4">Add a New Article</h2>
+
+            <div class="mt-6 space-y-4">
+                <!-- Drag & Drop Area -->
+                <div id="drop-area" class="drop-area text-center p-8 rounded-lg mb-6 cursor-pointer">
+                    <p class="text-gray-400 text-sm">Drag & drop a news screenshot or PDF here, or</p>
+                    <label for="imageUpload" class="text-blue-400 hover:text-blue-300 font-medium cursor-pointer">
+                        Browse to upload
+                    </label>
+                    <input type="file" id="imageUpload" accept="image/*, application/pdf" class="hidden">
+                </div>
+                <button id="analyzeImageBtn" class="w-full mt-4 px-6 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+                    Analyze Document
+                </button>
+                <div id="loadingIndicator" class="mt-4 text-center text-blue-400 hidden">
+                    Analyzing...
+                </div>
+            </div>
+
+            <form id="addNewsForm" class="mt-6 space-y-4">
+                <div>
+                    <label for="newsTitle" class="block text-sm font-medium text-gray-300">Title</label>
+                    <input type="text" id="newsTitle" required class="w-full mt-1 p-2 bg-gray-700 border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <div class="flex items-center space-x-2 mt-2">
+                        <button type="button" id="generateHeadlineBtn" class="px-4 py-2 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors">
+                            Generate Headline ✨
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <label for="newsSummary" class="block text-sm font-medium text-gray-300">Summary (Short)</label>
+                    <textarea id="newsSummary" rows="2" required class="w-full mt-1 p-2 bg-gray-700 border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                </div>
+                <div>
+                    <label for="newsFullDescription" class="block text-sm font-medium text-gray-300">Full Description (Extensive, in points)</label>
+                    <textarea id="newsFullDescription" rows="5" required class="w-full mt-1 p-2 bg-gray-700 border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                </div>
+                <div>
+                    <label for="newsTag" class="block text-sm font-medium text-gray-300">Tag</label>
+                    <select id="newsTag" required class="w-full mt-1 p-2 bg-gray-700 border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <!-- Options will be populated by JavaScript -->
+                    </select>
+                </div>
+                <div>
+                    <label for="sourceUrl" class="block text-sm font-medium text-gray-300">Source URL (Optional)</label>
+                    <input type="url" id="sourceUrl" placeholder="https://example.com/article" class="w-full mt-1 p-2 bg-gray-700 border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="flex space-x-4">
+                    <button type="submit" class="w-full px-6 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+                        Save Article
+                    </button>
+                    <button type="button" id="cancelFormBtn" class="w-full px-6 py-3 bg-gray-600 text-white font-bold rounded-xl hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors">
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- News Grid -->
+        <div id="newsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- News articles will be dynamically injected here by JavaScript -->
+        </div>
+
+        <!-- No News Message -->
+        <div id="noNewsMessage" class="hidden text-center mt-16 text-gray-500 text-lg">
+            No articles found. Add some news using the button above!
+        </div>
+    </div>
+
+    <!-- Modal for Expanded View -->
+    <div id="modal" class="fixed inset-0 bg-gray-900 bg-opacity-80 flex items-center justify-center p-4 hidden">
+        <div class="bg-gray-800 rounded-2xl p-8 max-w-2xl w-full relative shadow-xl">
+            <button id="closeModal" class="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+            <h3 id="modalTitle" class="text-2xl font-bold text-white mb-4"></h3>
+            <div id="modalContent" class="text-gray-300 overflow-y-auto max-h-[70vh]"></div>
+        </div>
+    </div>
+
+    <!-- Modal for Import -->
+    <div id="importModal" class="fixed inset-0 bg-gray-900 bg-opacity-80 flex items-center justify-center p-4 hidden">
+        <div class="bg-gray-800 rounded-2xl p-8 max-w-2xl w-full relative shadow-xl">
+            <h3 class="text-2xl font-bold text-white mb-4">Import Articles</h3>
+            <p class="text-gray-400 mb-4">Paste the content from your exported .txt file below.</p>
+            <textarea id="importData" rows="10" class="w-full mt-1 p-2 bg-gray-700 border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="---
+Title: Example Title
+Date: September 2, 2025
+Tag: Finance
+Summary: This is an example summary.
+Source URL: https://example.com
+---
+..."></textarea>
+            <div class="flex space-x-4 mt-4">
+                <button id="confirmImportBtn" class="w-full px-6 py-3 bg-teal-600 text-white font-bold rounded-xl hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-colors">
+                    Import
+                </button>
+                <button id="cancelImportBtn" class="w-full px-6 py-3 bg-gray-600 text-white font-bold rounded-xl hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+     <!-- Modal for Market Analysis -->
+    <div id="analysisModal" class="fixed inset-0 bg-gray-900 bg-opacity-80 flex items-center justify-center p-4 hidden">
+        <div class="bg-gray-800 rounded-2xl p-8 max-w-3xl w-full relative shadow-xl">
+            <button id="closeAnalysisModal" class="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+            <h3 class="text-2xl font-bold text-white mb-4">Market Impact Analysis</h3>
+            <div id="analysisResult" class="text-gray-300 overflow-y-auto max-h-[70vh]">
+                <!-- Analysis results will be dynamically injected here -->
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        // Use a self-executing anonymous function to avoid polluting the global scope
+        (function() {
+            const newsGrid = document.getElementById('newsGrid');
+            const showAddFormBtn = document.getElementById('showAddFormBtn');
+            const addFormContainer = document.getElementById('addFormContainer');
+            const addNewsForm = document.getElementById('addNewsForm');
+            const newsTitleInput = document.getElementById('newsTitle');
+            const newsSummaryInput = document.getElementById('newsSummary');
+            const newsFullDescriptionInput = document.getElementById('newsFullDescription');
+            const newsUrlInput = document.getElementById('sourceUrl');
+            const noNewsMessage = document.getElementById('noNewsMessage');
+            const messageBox = document.getElementById('message-box');
+            const modal = document.getElementById('modal');
+            const closeModalBtn = document.getElementById('closeModal');
+            const modalTitle = document.getElementById('modalTitle');
+            const modalContent = document.getElementById('modalContent');
+            const tagFilter = document.getElementById('tagFilter');
+            const newsTagInput = document.getElementById('newsTag');
+            const searchInput = document.getElementById('searchInput');
+            const imageUpload = document.getElementById('imageUpload');
+            const analyzeImageBtn = document.getElementById('analyzeImageBtn');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const formTitle = document.getElementById('formTitle');
+            const cancelFormBtn = document.getElementById('cancelFormBtn');
+            const dropArea = document.getElementById('drop-area');
+            const generateHeadlineBtn = document.getElementById('generateHeadlineBtn');
+            const selectAllBtn = document.getElementById('selectAllBtn');
+            const exportBtn = document.getElementById('exportBtn');
+            const importBtn = document.getElementById('importBtn');
+            const importModal = document.getElementById('importModal');
+            const cancelImportBtn = document.getElementById('cancelImportBtn');
+            const confirmImportBtn = document.getElementById('confirmImportBtn');
+            const importDataTextarea = document.getElementById('importData');
+            const analyzeImpactBtn = document.getElementById('analyzeImpactBtn');
+            const analysisModal = document.getElementById('analysisModal');
+            const closeAnalysisModalBtn = document.getElementById('closeAnalysisModal');
+            const analysisResult = document.getElementById('analysisResult');
+
+            let editingIndex = -1;
+            let isSelectAll = false;
+
+            const { jsPDF } = window.jspdf;
+
+            const availableTags = ["AI", "Entertainment", "Finance", "Industrial", "Pharma", "Real Estate", "Retail", "Technological Services", "Telecommunications"].sort();
+            const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-05-20:generateContent?key=";
+            const apiKey = "AIzaSyD9xRkAan0WhW8GTegveSaU5gaInCO4Yy0";
+
+            const initialNews = [
+                {
+                    title: "Research and Investigational Drugs (RAID) Designation",
+                    url: "RAID.pdf",
+                    summary: "A document outlining the Saudi Food & Drug Authority's (SFDA) new RAID designation program, aimed at accelerating the development and review of investigational drugs to promote research and development in Saudi Arabia.",
+                    fullDescription: `
+                        <ul class="list-disc list-inside space-y-2">
+                            <li><strong>Purpose:</strong> The RAID designation program is part of the SFDA's initiative to encourage Research and Development (R&D) in Saudi Arabia's pharmaceutical sector.</li>
+                            <li><strong>Incentives:</strong> The program offers several benefits, including a dedicated SFDA contact point, pre-designation meetings for scientific and regulatory guidance, and potential for an expedited assessment for marketing authorization applications.</li>
+                            <li><strong>Eligibility:</strong> To be eligible, a product must be an investigational drug not yet authorized globally, be innovative, and have a clinical trial committed to be conducted in Saudi Arabia.</li>
+                            <li><strong>Process:</strong> The document details the application process, from the initial submission via email to the final decision from the SFDA within a specified timeframe.</li>
+                        </ul>
+                    `,
+                    date: "September 18, 2025",
+                    tag: 'Pharma'
+                },
+                {
+                    title: "Cenomi Retail Announces 49.95% Share Sale to Al Futtaim Group for 2.5 Billion Riyals",
+                    url: "",
+                    summary: "Cenomi Retail received a notice from a major shareholder regarding the sale of a significant stake, valued at 2.5 billion riyals, to the Al Futtaim Group.",
+                    fullDescription: `
+                        <ul class="list-disc list-inside space-y-2">
+                            <li><strong>Transaction Details:</strong> A major shareholder in Cenomi Retail, Fawaz Abdulaziz Alhokair & Co., is selling 49.95% of his shares.</li>
+                            <li><strong>Valuation:</strong> The stake is valued at 44 riyals per share, totaling 2.5 billion riyals.</li>
+                            <li><strong>Acquirer:</strong> The shares are being acquired by the Al Futtaim Group, a prominent regional company.</li>
+                        </ul>
+                    `,
+                    date: "September 16, 2025",
+                    tag: 'Retail'
+                },
+                {
+                    title: "Unifusion BSC Offers Medical Device & Cosmetics Registration Services",
+                    url: "",
+                    summary: "Unifusion BSC is a trusted authorized representative in Saudi Arabia that helps medical device companies navigate the complexity of SFDA registration.",
+                    fullDescription: `
+                        <ul class="list-disc list-inside space-y-2">
+                            <li><strong>Services:</strong> The company provides business consulting and services for medical devices and cosmetics.</li>
+                            <li><strong>Specialization:</strong> Unifusion BSC specializes in SFDA registration to ensure successful market entry for its clients.</li>
+                            <li><strong>Location:</strong> The business is based in Riyadh, Saudi Arabia.</li>
+                        </ul>
+                    `,
+                    date: "September 16, 2025",
+                    tag: 'Pharma'
+                },
+                {
+                    title: "Oumla.com Secures $2.4 Million in Seed Funding",
+                    url: "",
+                    summary: "Oumla.com, a provider of digital asset infrastructure solutions, has successfully closed a seed investment round valued at $2.4 million.",
+                    fullDescription: `
+                        <ul class="list-disc list-inside space-y-2">
+                            <li><strong>Funding Details:</strong> The seed round was led by Corevisionsa and Avax.</li>
+                            <li><strong>Investors:</strong> The funding also included contributions from several angel investors.</li>
+                            <li><strong>Services:</strong> Oumla.com's services include providing digital asset infrastructure and management for corporations, banks, and government entities, and connecting with blockchain networks.</li>
+                        </ul>
+                    `,
+                    date: "September 16, 2025",
+                    tag: 'Finance'
+                },
+                {
+                    title: "Data Requirements for Human Drugs Submission",
+                    url: "https://www.sfda.gov.sa",
+                    summary: "The Saudi Food and Drug Authority (SFDA) has updated its electronic Common Technical Document (eCTD) requirements for submitting information on nitrosamine impurities in new and generic drug applications.",
+                    fullDescription: `
+                        <ul class="list-disc list-inside space-y-2">
+                            <li><strong>Risk Assessment Report:</strong> The SFDA now mandates a risk assessment report for potential nitrosamine impurities to be included in drug applications.</li>
+                            <li><strong>eCTD Updates:</strong> The eCTD rules have been updated for 2025, including new Module 1 rules and baseline submission requirements to facilitate a more efficient review process.</li>
+                            <li><strong>Applicability:</strong> These new requirements apply to both new and generic pharmaceutical products as part of the initial registration process.</li>
+                        </ul>
+                    `,
+                    date: "September 12, 2025",
+                    tag: 'Pharma'
+                },
+                {
+                    title: "Tabby and Tamara Revenues Exceed Half a Billion Riyals in Q1 2025 with 39% Growth",
+                    url: "https://www.aleqt.com/2025/05/21/article_2761552.html",
+                    summary: "The revenues of 'Tabby' and 'Tamara', two major 'Buy Now, Pay Later' (BNPL) platforms, surpassed half a billion Saudi Riyals in the first quarter of 2025, recording a remarkable 39% annual growth.",
+                    fullDescription: `
+                        <ul class="list-disc list-inside space-y-2">
+                            <li><strong>Revenue Milestone:</strong> The combined revenues of Tabby and Tamara hit over 500 million SAR in Q1 2025.</li>
+                            <li><strong>Growth Driver:</strong> The significant growth is primarily attributed to increased revenue from commissions charged to merchants.</li>
+                            <li><strong>Tabby's Performance:</strong> Tabby recorded a net profit of 65.2 million SAR in Q1, a massive 553% year-on-year increase. The company's revenues were 319.4 million SAR, up 38%.</li>
+                            <li><strong>Tamara's Performance:</strong> Tamara turned profitable in Q1, with a net profit of 25.8 million SAR, a significant turnaround from a loss of 62.1 million SAR in the same period last year. Its revenues grew by 40% to 215.9 million SAR.</li>
+                            <li><strong>IPO Plans:</strong> Tabby has been working towards a potential IPO on the Saudi stock exchange.</li>
+                            <li><strong>Valuation:</strong> Tabby's valuation reached $3.3 billion after its most recent funding round, while Tamara's valuation stood at $1 billion.</li>
+                        </ul>
+                    `,
+                    date: "September 12, 2025",
+                    tag: 'Finance'
+                },
+                {
+                    title: "ADQ sells its 45% stake in Alpha Dhabi",
+                    url: "",
+                    summary: "Abu Dhabi's ADQ, a major investment holding company, has sold its entire 45% stake in Alpha Dhabi Holding to a private investment firm, with the deal's value based on Alpha Dhabi's market cap.",
+                    fullDescription: `
+                        <ul class="list-disc list-inside space-y-2">
+                            <li><strong>The Parties:</strong> ADQ, one of Abu Dhabi's largest sovereign wealth funds, sold its stake to a private investment firm.</li>
+                            <li><strong>Transaction Details:</strong> The sale involved ADQ's full 45% shareholding in Alpha Dhabi Holding, an Abu Dhabi-based conglomerate.</li>
+                            <li><strong>Valuation:</strong> The value of the transaction was not publicly disclosed but was determined based on Alpha Dhabi's market capitalization.</li>
+                            <li><strong>Strategic Impact:</strong> This sale allows ADQ to rebalance its portfolio and focus on other strategic investments, while the private firm gains a significant stake in a major player in the region.</li>
+                        </ul>
+                    `,
+                    date: "September 10, 2025",
+                    tag: 'Finance'
+                },
+                {
+                    title: "Abu Dhabi’s Yas Island breaks record with 34,000 visitors at New Year’s Eve celebrations",
+                    url: "",
+                    summary: "Yas Island in Abu Dhabi set a new record for its New Year's Eve celebrations, attracting over 34,000 attendees to the fireworks and drone show event.",
+                    fullDescription: `
+                        <ul class="list-disc list-inside space-y-2">
+                            <li><strong>Record-Breaking Attendance:</strong> The event drew an unprecedented crowd of more than 34,000 people, marking a new attendance record for the popular destination.</li>
+                            <li><strong>Spectacle:</strong> Attendees enjoyed a spectacular fireworks display and a synchronized drone show, contributing to a vibrant and memorable celebration.</li>
+                            <li><strong>Economic Impact:</strong> The high turnout highlights Yas Island's growing appeal as a major entertainment and tourism hub in the region.</li>
+                        </ul>
+                    `,
+                    date: "September 9, 2025",
+                    tag: 'Entertainment'
+                },
+                {
+                    title: "Al Futtaim Group acquires 25% stake in Chalhoub Group",
+                    url: "",
+                    summary: "The UAE's Al Futtaim Group has purchased a 25% ownership stake in the Dubai-based luxury retail giant, Chalhoub Group, for a sum exceeding $500 million.",
+                    fullDescription: `
+                        <ul class="list-disc list-inside space-y-2">
+                            <li><strong>Acquisition:</strong> Al Futtaim Group, a diversified conglomerate, has acquired a significant minority stake in the Chalhoub Group.</li>
+                            <li><strong>Valuation:</strong> The deal, which strengthens Al Futtaim's position in the luxury goods market, was valued at over $500 million.</li>
+                            <li><strong>Synergy:</strong> This partnership is expected to create synergies and drive growth for both companies within the luxury and retail sectors.</li>
+                            <li><strong>Market Position:</strong> Chalhoub Group is a well-established leader in luxury retail distribution across the Middle East.</li>
+                        </ul>
+                    `,
+                    date: "September 8, 2025",
+                    tag: 'Retail'
+                },
+                {
+                    title: "Dubai’s largest mall opens a new virtual store in the Metaverse",
+                    url: "",
+                    summary: "Cityland Mall in Dubai is set to launch its own virtual store within the Metaverse, offering a new shopping experience for customers.",
+                    fullDescription: `
+                        <ul class="list-disc list-inside space-y-2">
+                            <li><strong>Virtual Expansion:</strong> Cityland Mall is entering the digital realm by creating a virtual presence in the Metaverse.</li>
+                            <li><strong>New Experience:</strong> This initiative provides a new way for consumers to shop and interact with the mall's offerings from anywhere in the world.</li>
+                            <li><strong>Technology Integration:</strong> The move showcases the increasing integration of retail with virtual reality and digital platforms.</li>
+                            <li><strong>Strategic Vision:</strong> This step aligns with Dubai's push for digital innovation and establishing itself as a hub for future-forward technologies.</li>
+                        </ul>
+                    `,
+                    date: "September 7, 2025",
+                    tag: 'Technological Services'
+                },
+                {
+                    title: "DEWA announces a record AED 8.7 billion in profit",
+                    url: "",
+                    summary: "The Dubai Electricity and Water Authority (DEWA) has reported a record-breaking profit of AED 8.7 billion for the first nine months of the year, driven by higher demand and operational efficiency.",
+                    fullDescription: `
+                        <ul class="list-disc list-inside space-y-2">
+                            <li><strong>Financial Performance:</strong> DEWA's profit reached an unprecedented AED 8.7 billion (approximately $2.37 billion) for the first nine months of the financial year.</li>
+                            <li><strong>Key Drivers:</strong> This strong performance is attributed to a surge in electricity and water demand as well as improved operational efficiency across its services.</li>
+                            <li><strong>Market Position:</strong> As a major utility provider in Dubai, this record profit underscores the company's robust financial health and the city's economic growth.</li>
+                        </ul>
+                    `,
+                    date: "September 6, 2025",
+                    tag: 'Finance'
+                },
+                {
+                    title: "Emaar Properties records $1.5 billion in profit for the first nine months of 2023",
+                    url: "",
+                    summary: "Emaar Properties, the developer of the Burj Khalifa, has announced a net profit of $1.5 billion for the first nine months of 2023, reflecting strong sales across its portfolio.",
+                    fullDescription: `
+                        <ul class="list-disc list-inside space-y-2">
+                            <li><strong>Profit Milestone:</strong> The company reported a substantial net profit of $1.5 billion, a significant indicator of its financial success.</li>
+                            <li><strong>Performance Drivers:</strong> The profit was fueled by robust real estate sales and the company's successful management of its diverse portfolio.</li>
+                            <li><strong>Market Confidence:</strong> Emaar's performance reflects strong investor confidence and a booming real estate market in Dubai.</li>
+                        </ul>
+                    `,
+                    date: "September 5, 2025",
+                    tag: 'Real Estate'
+                },
+                {
+                    title: "ADNOC finalizes partnership deal with Eni and OMV",
+                    url: "",
+                    summary: "ADNOC has completed a strategic partnership agreement with Italian oil giant Eni and Austria's OMV, focusing on the joint development of projects in the energy sector.",
+                    fullDescription: `
+                        <ul class="list-disc list-inside space-y-2">
+                            <li><strong>Strategic Alliance:</strong> ADNOC, one of the world's largest energy companies, has formalized a new partnership with two leading European energy firms, Eni and OMV.</li>
+                            <li><strong>Collaboration:</strong> The agreement aims to pool resources and expertise to collaborate on upstream, midstream, and downstream projects.</li>
+                            <li><strong>Global Reach:</strong> This deal enhances ADNOC's global footprint and strengthens its position in key international markets.</li>
+                        </ul>
+                    `,
+                    date: "September 4, 2025",
+                    tag: 'Industrial'
+                },
+                {
+                    title: "SIDARA ACQUIRES UK'S WOOD GROUP IN $292 MILLION DEAL",
+                    url: "https://www.instagram.com/smashibusiness/",
+                    summary: "Sidara, the UAE-based engineering firm, has acquired the UK's Wood Group for £216 million ($292 million), with a $450 million capital injection and assumption of $1.6 billion in debt.",
+                    fullDescription: `
+                        <ul class="list-disc list-inside space-y-2">
+                            <li><strong>The Acquirer:</strong> Sidara is a prominent UAE-based engineering firm, expanding its global footprint.</li>
+                            <li><strong>The Target:</strong> Wood Group is a UK-based company specializing in engineering and consulting services.</li>
+                            <li><strong>Deal Specifics:</strong> The acquisition is valued at £216 million ($292 million), including a significant capital injection and the assumption of $1.6 billion in debt.</li>
+                            <li><strong>Contingency:</strong> The deal is dependent on Wood Group publishing its delayed financial results by October 31, 2025.</li>
+                            <li><strong>Market Impact:</strong> This move signifies a major consolidation in the global engineering sector and a strategic expansion for Sidara.</li>
+                        </ul>
+                    `,
+                    date: "September 3, 2025",
+                    tag: 'Industrial'
+                }
+            ];
+
+            // Function to strip HTML tags from a string
+            function stripHtml(html) {
+                const doc = new DOMParser().parseFromString(html, 'text/html');
+                return doc.body.textContent || "";
+            }
+
+            // Show a temporary message to the user
+            function showMessage(message, type = 'success') {
+                messageBox.textContent = message;
+                messageBox.classList.remove('hidden', 'bg-red-500', 'bg-green-500');
+                if (type === 'success') {
+                    messageBox.classList.add('bg-green-500');
+                } else {
+                    messageBox.classList.add('bg-red-500');
+                }
+                setTimeout(() => {
+                    messageBox.classList.add('hidden');
+                }, 3000);
+            }
+
+            // Function to save news to localStorage
+            function saveNews(news) {
+                localStorage.setItem('newsData', JSON.stringify(news));
+            }
+
+            // Function to load news from localStorage
+            function loadNews() {
+                const newsString = localStorage.getItem('newsData');
+                if (newsString) {
+                    return JSON.parse(newsString);
+                } else {
+                    saveNews(initialNews);
+                    return initialNews;
+                }
+            }
+
+            // Function to handle TXT export
+            function handleExport() {
+                const selectedArticles = document.querySelectorAll('.news-card input[type="checkbox"]:checked');
+                if (selectedArticles.length === 0) {
+                    showMessage("Please select at least one article to export.", "error");
+                    return;
+                }
+
+                const articlesToExport = Array.from(selectedArticles).map(checkbox => {
+                    const card = checkbox.closest('.news-card');
+                    const index = parseInt(card.dataset.index, 10);
+                    const allNews = loadNews();
+                    // Find the article in the original sorted list
+                    const originalArticle = allNews.find(a => a.title === card.querySelector('h3').textContent.trim());
+                    return originalArticle || allNews[index];
+                });
+
+                let exportContent = `Banafa's Daily Brief - Exported Articles\n\n`;
+                articlesToExport.forEach(article => {
+                    exportContent += `---
+Title: ${article.title}
+Date: ${article.date}
+Tag: ${article.tag}
+Summary: ${article.summary}
+${article.url ? `Source URL: ${article.url}\n` : ''}
+\n`;
+                });
+
+                const blob = new Blob([exportContent], { type: 'text/plain;charset=utf-8' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = 'daily-brief.txt';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+
+                showMessage(`Successfully exported ${selectedArticles.length} article(s)!`);
+            }
+
+            // Function to handle bulk import
+            function handleImport(importText) {
+                if (!importText.trim()) {
+                    showMessage("Import field is empty.", "error");
+                    return;
+                }
+
+                const articleBlocks = importText.split('---').filter(block => block.trim() !== "");
+                if (articleBlocks.length === 0) {
+                    showMessage("No valid articles found in the provided text.", "error");
+                    return;
+                }
+                
+                const newArticles = [];
+                let malformedCount = 0;
+
+                articleBlocks.forEach(block => {
+                    const article = { fullDescription: '' }; // Default fullDescription
+                    const lines = block.trim().split('\n');
+                    lines.forEach(line => {
+                        if (line.startsWith("Title: ")) article.title = line.substring(7);
+                        else if (line.startsWith("Date: ")) article.date = line.substring(6);
+                        else if (line.startsWith("Tag: ")) article.tag = line.substring(5);
+                        else if (line.startsWith("Summary: ")) article.summary = line.substring(9);
+                        else if (line.startsWith("Source URL: ")) article.url = line.substring(12);
+                    });
+
+                    // Basic validation
+                    if (article.title && article.summary && article.date && article.tag) {
+                        newArticles.push(article);
+                    } else {
+                        malformedCount++;
+                    }
+                });
+                
+                if (newArticles.length > 0) {
+                    const existingArticles = loadNews();
+                    const updatedArticles = [...newArticles, ...existingArticles];
+                    saveNews(updatedArticles);
+                    renderNews();
+                    showMessage(`${newArticles.length} articles imported successfully!`, 'success');
+                }
+
+                if (malformedCount > 0) {
+                    showMessage(`${malformedCount} articles had an invalid format and were skipped.`, 'error');
+                }
+
+                importModal.classList.add('hidden');
+                importDataTextarea.value = '';
+            }
+
+
+            // Function to render news articles
+            function renderNews() {
+                const selectedTag = tagFilter.value;
+                const filterText = searchInput.value.toLowerCase();
+                let newsArticles = loadNews();
+                
+                // Sort articles by date in descending order (latest first)
+                newsArticles.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                let filteredNews = newsArticles;
+
+                if (selectedTag !== 'All') {
+                    filteredNews = newsArticles.filter(article => article.tag === selectedTag);
+                }
+
+                if (filterText) {
+                    filteredNews = filteredNews.filter(article =>
+                        article.title.toLowerCase().includes(filterText) ||
+                        article.summary.toLowerCase().includes(filterText)
+                    );
+                }
+                
+                newsGrid.innerHTML = '';
+                if (filteredNews.length === 0) {
+                    noNewsMessage.classList.remove('hidden');
+                } else {
+                    noNewsMessage.classList.add('hidden');
+                    filteredNews.forEach((article, index) => {
+                        const card = document.createElement('div');
+                        card.className = 'news-card bg-gray-800 p-6 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 flex flex-col justify-between';
+                        card.setAttribute('data-index', index);
+                        
+                        // Card content
+                        const content = `
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1">
+                                    <h3 class="text-xl font-bold text-white mb-2">${article.title}</h3>
+                                </div>
+                                <div class="ml-4 flex items-center space-x-2">
+                                    <input type="checkbox" class="h-5 w-5 rounded text-indigo-600 focus:ring-indigo-500 bg-gray-700 border-gray-600">
+                                    <button draggable="true" class="drag-handle cursor-move text-gray-500 hover:text-white transition-colors">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                            <span class="text-xs px-2 py-1 bg-indigo-500 text-white rounded-full font-medium">${article.tag}</span>
+                            <p class="text-sm text-gray-400 my-4">${article.summary}</p>
+                            <div class="mt-4 flex items-center justify-between">
+                                <button class="read-more-btn text-blue-400 hover:text-blue-300 font-medium transition-colors" data-index="${index}">
+                                    Read more &rarr;
+                                </button>
+                                ${article.url ? `<a href="${article.url}" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-gray-300 transition-colors text-sm font-medium">View Original</a>` : ''}
+                                <span class="text-xs text-gray-500">${article.date}</span>
+                            </div>
+                            <div class="mt-4 flex space-x-2 items-center justify-end">
+                                <button class="share-btn text-gray-400 hover:text-white transition-colors" data-index="${index}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186A4.486 4.486 0 0112 11.25c4.148 0 7.5 3.24 7.5 7.5s-3.352 7.5-7.5 7.5-7.5-3.24-7.5-7.5m9 3.375c1.075 0 2.13-2.14 2.13-2.14m-12.247-2.825a1.5 1.5 0 10-2.122 2.122A1.5 1.5 0 005.153 9.407m9.58 2.342c-2.007 0-3.633-1.626-3.633-3.633m3.633 3.633h-1.55m-2.122-2.122a1.5 1.5 0 10-2.122 2.122M5.153 9.407A6.486 6.486 0 0112 5.153c3.626 0 6.574 2.948 6.574 6.574m-1.55 2.122h1.55M7.217 10.907A6.486 6.486 0 0112 5.153c3.626 0 6.574 2.948 6.574 6.574m-1.55-2.122h1.55" />
+                                    </svg>
+                                </button>
+                                <button class="edit-btn text-sm text-green-400 hover:text-green-300 font-medium transition-colors" data-index="${index}">Edit</button>
+                                <button class="delete-btn text-sm text-red-400 hover:text-red-300 font-medium transition-colors" data-index="${index}">Delete</button>
+                            </div>
+                        `;
+                        card.innerHTML = content;
+                        newsGrid.appendChild(card);
+                    });
+                }
+            }
+            
+            // Handle file upload and analysis
+            const handleFile = async (file) => {
+                if (!apiKey) {
+                    showMessage("API key is not configured. Please ensure your environment has a valid key.", "error");
+                    return;
+                }
+                if (!file) {
+                    showMessage('Please select an image or PDF file.', 'error');
+                    return;
+                }
+                
+                const fileType = file.type;
+                let prompt;
+
+                if (fileType.startsWith('image/')) {
+                    prompt = `Act as a news editor. Analyze the following screenshot of a news article. Extract the following information as a JSON object:
+                    1. "title" (string): The main headline of the article.
+                    2. "summary" (string): A brief, 1-2 sentence summary of the news.
+                    3. "fullDescription" (string): An extensive description of the news in points. Use bullet points for each new point. Start each bullet point with a bolded keyword.
+                    4. "tag" (string): A single tag from the following list: ${availableTags.join(', ')}. Choose the most relevant tag.
+                    
+                    Respond with only the JSON object.`;
+                } else if (fileType === 'application/pdf') {
+                    prompt = `Act as a news editor. Analyze the following PDF document. Extract the following information as a JSON object:
+                    1. "title" (string): The main headline or title of the document.
+                    2. "summary" (string): A brief, 1-2 sentence summary of the news.
+                    3. "fullDescription" (string): An extensive description of the news in points. Use bullet points for each new point. Start each bullet point with a bolded keyword.
+                    4. "tag" (string): A single tag from the following list: ${availableTags.join(', ')}. Choose the most relevant tag.
+
+                    Respond with only the JSON object.`;
+                } else {
+                    showMessage('Unsupported file type. Please upload an image or PDF.', 'error');
+                    return;
+                }
+
+                loadingIndicator.classList.remove('hidden');
+                analyzeImageBtn.disabled = true;
+                loadingIndicator.textContent = "Analyzing document content...";
+
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    const base64Data = e.target.result.split(',')[1];
+                    
+                    const payload = {
+                        contents: [{
+                            parts: [
+                                { text: prompt },
+                                {
+                                    inlineData: {
+                                        mimeType: fileType,
+                                        data: base64Data
+                                    }
+                                }
+                            ]
+                        }],
+                        generationConfig: {
+                            responseMimeType: "application/json"
+                        }
+                    };
+
+                    try {
+                        const response = await fetch(API_URL + apiKey, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! Status: ${response.status}`);
+                        }
+
+                        const result = await response.json();
+                        const jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                        
+                        if (!jsonText) {
+                           throw new Error('No structured data extracted from document.');
+                        }
+                        
+                        const data = JSON.parse(jsonText);
+
+                        newsTitleInput.value = data.title || '';
+                        newsSummaryInput.value = data.summary || '';
+                        newsFullDescriptionInput.value = data.fullDescription || '';
+                        newsTagInput.value = data.tag || availableTags[0];
+                        newsUrlInput.value = "";
+
+                        showMessage('Article details extracted successfully!');
+
+                    } catch (error) {
+                        console.error('Error analyzing document:', error);
+                        showMessage('Failed to analyze document. Please try again.', 'error');
+                    } finally {
+                        loadingIndicator.classList.add('hidden');
+                        analyzeImageBtn.disabled = false;
+                        loadingIndicator.textContent = "Analyzing...";
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+            
+            // Handle headline generation
+            const handleGenerateHeadline = async () => {
+                const summary = newsSummaryInput.value;
+                if (!summary) {
+                    showMessage('Please provide a summary to generate a headline.', 'error');
+                    return;
+                }
+                
+                generateHeadlineBtn.disabled = true;
+                const originalText = generateHeadlineBtn.textContent;
+                generateHeadlineBtn.textContent = 'Generating...';
+                
+                const prompt = `Based on the following news article summary, suggest a concise and compelling headline. Respond with only the headline text.
+                
+                Article Summary: ${summary}`;
+
+                const payload = {
+                    contents: [{
+                        parts: [{ text: prompt }]
+                    }]
+                };
+
+                try {
+                    const response = await fetch(API_URL + apiKey, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const result = await response.json();
+                    const headline = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                    
+                    if (headline) {
+                        newsTitleInput.value = headline.trim().replace(/^"|"$/g, '');
+                    } else {
+                        showMessage('Failed to generate a headline.', 'error');
+                    }
+                } catch (error) {
+                    console.error('Error generating headline:', error);
+                    showMessage('Failed to generate a headline. Please try again.', 'error');
+                } finally {
+                    generateHeadlineBtn.disabled = false;
+                    generateHeadlineBtn.textContent = originalText;
+                }
+            };
+
+            // Handle Market Impact Analysis
+            const handleMarketAnalysis = async (articles) => {
+                if (!apiKey) {
+                    showMessage("API key is not configured.", "error");
+                    analysisResult.innerHTML = `<p class="text-red-400">Analysis failed: API key is missing.</p>`;
+                    return;
+                }
+
+                const articlesText = articles.map(a => `Title: ${a.title}\nSummary: ${a.summary}`).join('\n\n---\n\n');
+                
+                const systemPrompt = `You are an expert business analyst and historian. Your task is to analyze a collection of news articles, identify the central theme or event, and provide a concise summary that includes relevant historical context or similar past events to help the user understand the significance of the news.`;
+
+                const userQuery = `Analyze the provided news articles. What is the main story here? Summarize the situation and then provide a brief 'Historical Context' section that mentions 1-2 similar events from the past in the same business sector.
+
+                News Articles:
+                ${articlesText}
+
+                Respond with a JSON object ONLY, with the following structure:
+                {
+                  "mainInsight": "A single-paragraph summary explaining the core theme connecting the selected articles.",
+                  "historicalContext": [
+                    {
+                      "event": "A brief description of a similar historical event.",
+                      "relevance": "A short explanation of why this past event is relevant to the current news."
+                    }
+                  ],
+                  "keyTakeaway": "A single, actionable takeaway or something to watch for in the future based on the analysis."
+                }`;
+                
+                const payload = {
+                    contents: [{ parts: [{ text: userQuery }] }],
+                    systemInstruction: { parts: [{ text: systemPrompt }] },
+                    generationConfig: { responseMimeType: "application/json" }
+                };
+
+                try {
+                    const response = await fetch(API_URL + apiKey, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!response.ok) {
+                        const errorBody = await response.text();
+                        throw new Error(`HTTP error! status: ${response.status}, body: ${errorBody}`);
+                    }
+                    
+                    const result = await response.json();
+                    const jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (!jsonText) throw new Error('No analysis data returned from AI. The response might be empty.');
+
+                    const data = JSON.parse(jsonText);
+                    renderAnalysisResults(data);
+
+                } catch (error) {
+                    console.error('Error during market analysis:', error);
+                    analysisResult.innerHTML = `<p class="text-red-400">An error occurred during analysis. This could be due to an invalid API key, network issues, or the AI's inability to process the request. Please check the console for more details and try again with a different selection of articles.</p>`;
+                }
+            };
+            
+            // Render Market Analysis Results
+            const renderAnalysisResults = (data) => {
+                if (!data) {
+                    analysisResult.innerHTML = `<p class="text-red-400">Failed to parse analysis results.</p>`;
+                    return;
+                }
+
+                let html = `<div class="space-y-6">`;
+
+                // Main Insight
+                if (data.mainInsight) {
+                    html += `
+                        <div>
+                            <h4 class="text-lg font-bold text-purple-400 mb-2">Main Insight</h4>
+                            <p class="text-gray-300">${data.mainInsight}</p>
+                        </div>
+                    `;
+                }
+
+                // Historical Context
+                if (data.historicalContext && data.historicalContext.length > 0) {
+                    html += `<div><h4 class="text-lg font-bold text-purple-400 mb-2">Historical Context</h4><div class="space-y-4">`;
+                    data.historicalContext.forEach(context => {
+                        html += `
+                            <div class="bg-gray-700 p-4 rounded-lg">
+                                <p class="font-bold text-white">${context.event}</p>
+                                <p class="text-sm text-gray-400 mt-2">${context.relevance}</p>
+                            </div>
+                        `;
+                    });
+                    html += `</div></div>`;
+                }
+
+                // Key Takeaway
+                if (data.keyTakeaway) {
+                    html += `
+                        <div>
+                            <h4 class="text-lg font-bold text-purple-400 mb-2">Key Takeaway</h4>
+                            <p class="text-gray-300">${data.keyTakeaway}</p>
+                        </div>
+                    `;
+                }
+
+
+                html += `</div>`;
+                analysisResult.innerHTML = html;
+            };
+
+            // Handle summary and translation within the modal
+            const handleModalSummarizeTranslate = async (fullDescription) => {
+                if (!apiKey) {
+                    showMessage("API key is not configured. Please ensure your environment has a valid key.", "error");
+                    return;
+                }
+                const modalButton = document.getElementById('summarizeTranslateModalBtn');
+                const modalTranslateResult = document.getElementById('modalTranslateResult');
+
+                if (!fullDescription) {
+                    modalTranslateResult.textContent = 'No description to summarize and translate.';
+                    return;
+                }
+
+                modalButton.disabled = true;
+                modalButton.textContent = 'Translating...';
+
+                const prompt = `Translate and summarize the following text into a concise, 1-2 sentence summary in Arabic.
+                
+                Text: ${stripHtml(fullDescription)}`;
+
+                const payload = {
+                    contents: [{
+                        parts: [{ text: prompt }]
+                    }]
+                };
+
+                try {
+                    const response = await fetch(API_URL + apiKey, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const result = await response.json();
+                    const translatedSummary = result.candidates?.[0]?.content?.parts?.[0]?.text;
+                    
+                    if (translatedSummary) {
+                        modalTranslateResult.textContent = translatedSummary.trim();
+                    } else {
+                        modalTranslateResult.textContent = 'Failed to translate and summarize.';
+                    }
+                } catch (error) {
+                    console.error('Error translating:', error);
+                    modalTranslateResult.textContent = 'Failed to translate and summarize.';
+                } finally {
+                    modalButton.disabled = false;
+                    modalButton.textContent = 'Summarize & Translate ✨';
+                }
+            };
+            
+            // Handle select all
+            selectAllBtn.addEventListener('click', () => {
+                const checkboxes = document.querySelectorAll('.news-card input[type="checkbox"]');
+                isSelectAll = !isSelectAll;
+                checkboxes.forEach(checkbox => {
+                    checkbox.checked = isSelectAll;
+                });
+                selectAllBtn.textContent = isSelectAll ? 'Deselect All' : 'Select All';
+            });
+            
+            // Handle TXT export
+            exportBtn.addEventListener('click', handleExport);
+
+            // Import modal listeners
+            importBtn.addEventListener('click', () => {
+                importModal.classList.remove('hidden');
+                importDataTextarea.focus();
+            });
+
+            cancelImportBtn.addEventListener('click', () => {
+                importModal.classList.add('hidden');
+                importDataTextarea.value = '';
+            });
+            
+            confirmImportBtn.addEventListener('click', () => {
+                handleImport(importDataTextarea.value);
+            });
+
+
+            // Drag and drop event listeners
+            dropArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropArea.classList.add('active');
+            });
+
+            dropArea.addEventListener('dragleave', () => {
+                dropArea.classList.remove('active');
+            });
+
+            dropArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropArea.classList.remove('active');
+                const file = e.dataTransfer.files[0];
+                handleFile(file);
+            });
+
+            // Set data for dragging an article
+            newsGrid.addEventListener('dragstart', (e) => {
+                // Check if the user is selecting text
+                if (window.getSelection().toString()) {
+                    return;
+                }
+                
+                // Only allow dragging if the drag handle is the target
+                if (e.target.closest('.drag-handle')) {
+                    const card = e.target.closest('.news-card');
+                    const index = card.getAttribute('data-index');
+                    const article = loadNews()[index];
+                    const articleText = `Title: ${article.title}\nSummary: ${article.summary}\nFull Details: ${article.url || 'N/A'}`;
+                    e.dataTransfer.setData('text/plain', articleText);
+                }
+            });
+
+            // Event listeners for UI controls
+            showAddFormBtn.addEventListener('click', () => {
+                addNewsForm.reset();
+                addFormContainer.classList.toggle('hidden');
+                if (!addFormContainer.classList.contains('hidden')) {
+                    newsTitleInput.focus();
+                }
+                editingIndex = -1;
+                formTitle.textContent = "Add a New Article";
+            });
+
+            cancelFormBtn.addEventListener('click', () => {
+                addNewsForm.reset();
+                addFormContainer.classList.add('hidden');
+                editingIndex = -1;
+                formTitle.textContent = "Add a New Article";
+            });
+
+            analyzeImageBtn.addEventListener('click', () => handleFile(imageUpload.files[0]));
+
+            imageUpload.addEventListener('change', (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    handleFile(file);
+                }
+            });
+
+            generateHeadlineBtn.addEventListener('click', handleGenerateHeadline);
+            
+
+            addNewsForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const newsArticles = loadNews();
+                
+                const newArticleData = {
+                    title: newsTitleInput.value,
+                    url: newsUrlInput.value || "",
+                    summary: newsSummaryInput.value,
+                    fullDescription: newsFullDescriptionInput.value,
+                    date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+                    tag: newsTagInput.value
+                };
+
+                if (editingIndex === -1) {
+                    newsArticles.unshift(newArticleData);
+                    showMessage('Article added successfully!');
+                } else {
+                    const originalIndex = newsArticles.findIndex(a => a.title === newsArticles[editingIndex].title);
+                    if (originalIndex !== -1) {
+                         newsArticles[originalIndex] = newArticleData;
+                    } else {
+                         newsArticles[editingIndex] = newArticleData;
+                    }
+                    showMessage('Article updated successfully!');
+                    editingIndex = -1;
+                    formTitle.textContent = "Add a New Article";
+                }
+                
+                saveNews(newsArticles);
+                renderNews();
+                addNewsForm.reset();
+                addFormContainer.classList.add('hidden');
+            });
+
+            tagFilter.addEventListener('change', renderNews);
+            searchInput.addEventListener('input', renderNews);
+
+            newsGrid.addEventListener('click', (e) => {
+                const readMoreBtn = e.target.closest('.read-more-btn');
+
+                if (readMoreBtn) {
+                    const index = readMoreBtn.getAttribute('data-index');
+                    const newsArticles = loadNews();
+                    newsArticles.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                    const article = newsArticles[index];
+                    
+                    if (!article) return;
+
+                    modalTitle.textContent = article.title;
+                    modalContent.innerHTML = `
+                        <p class="text-sm font-semibold text-gray-400 mb-2">Full Description:</p>
+                        <div class="mb-4">${article.fullDescription}</div>
+                        <div class="space-y-2">
+                            <button id="summarizeTranslateModalBtn" class="w-full px-4 py-2 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors">
+                                Summarize & Translate (Arabic) ✨
+                            </button>
+                            <textarea id="modalTranslateResult" rows="2" class="w-full p-2 bg-gray-700 border-gray-600 rounded-lg focus:outline-none" placeholder="Arabic summary will appear here..." readonly></textarea>
+                        </div>
+                    `;
+
+                    // Set up event listener for the new button inside the modal
+                    document.getElementById('summarizeTranslateModalBtn').addEventListener('click', () => {
+                        handleModalSummarizeTranslate(article.fullDescription);
+                    });
+
+                    modal.classList.remove('hidden');
+                } else if (e.target.closest('.share-btn')) {
+                    const card = e.target.closest('.news-card');
+                    const index = card.getAttribute('data-index');
+                    const article = loadNews()[index];
+                    
+                    const shareText = `*${article.title}*\n\n${article.summary}\n\nFull details: ${article.url || "N/A"}`;
+                    
+                    const tempInput = document.createElement('textarea');
+                    tempInput.value = shareText;
+                    document.body.appendChild(tempInput);
+                    tempInput.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(tempInput);
+
+                    showMessage('Article copied to clipboard!');
+
+                } else if (e.target.closest('.edit-btn')) {
+                    const indexToEdit = e.target.closest('.edit-btn').dataset.index;
+                    let newsArticles = loadNews();
+                    newsArticles.sort((a, b) => new Date(b.date) - new Date(a.date));
+                    const article = newsArticles[indexToEdit];
+                    
+                    newsTitleInput.value = article.title;
+                    newsSummaryInput.value = article.summary;
+                    newsFullDescriptionInput.value = article.fullDescription;
+                    newsTagInput.value = article.tag;
+                    newsUrlInput.value = article.url || "";
+                    editingIndex = indexToEdit;
+                    formTitle.textContent = "Edit Article";
+                    addFormContainer.classList.remove('hidden');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+                } else if (e.target.closest('.delete-btn')) {
+                    const indexToDelete = e.target.closest('.delete-btn').dataset.index;
+                    let newsArticles = loadNews();
+                    newsArticles.sort((a, b) => new Date(b.date) - new Date(a.date));
+                    
+                    const articleToDelete = newsArticles[indexToDelete];
+                    
+                    let allNews = loadNews();
+                    const originalIndex = allNews.findIndex(a => a.title === articleToDelete.title && a.date === articleToDelete.date);
+                    
+                    if (originalIndex > -1) {
+                         allNews.splice(originalIndex, 1);
+                         saveNews(allNews);
+                         renderNews();
+                         showMessage('Article deleted successfully!');
+                    }
+                }
+            });
+
+            closeModalBtn.addEventListener('click', () => {
+                modal.classList.add('hidden');
+            });
+            
+            closeAnalysisModalBtn.addEventListener('click', () => {
+                analysisModal.classList.add('hidden');
+            });
+
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.classList.add('hidden');
+                }
+            });
+            
+            analysisModal.addEventListener('click', (e) => {
+                if (e.target === analysisModal) {
+                    analysisModal.classList.add('hidden');
+                }
+            });
+            
+             analyzeImpactBtn.addEventListener('click', () => {
+                const selectedArticles = [];
+                const checkboxes = document.querySelectorAll('.news-card input[type="checkbox"]:checked');
+                
+                if (checkboxes.length === 0) {
+                    showMessage("Please select at least one article to analyze.", "error");
+                    return;
+                }
+
+                const allNews = loadNews();
+                allNews.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                checkboxes.forEach(checkbox => {
+                    const card = checkbox.closest('.news-card');
+                    const index = parseInt(card.dataset.index, 10);
+                    selectedArticles.push(allNews[index]);
+                });
+
+                analysisModal.classList.remove('hidden');
+                analysisResult.innerHTML = `<div class="text-center"><p>Analyzing market connections... Please wait.</p></div>`;
+                handleMarketAnalysis(selectedArticles);
+            });
+
+
+            document.addEventListener('DOMContentLoaded', () => {
+                tagFilter.innerHTML = '<option value="All">All</option>' + availableTags.map(tag => `<option value="${tag}">${tag}</option>`).join('');
+                newsTagInput.innerHTML = availableTags.map(tag => `<option value="${tag}">${tag}</option>`).join('');
+                renderNews();
+            });
+
+        })();
+    </script>
+</body>
+</html>
+
