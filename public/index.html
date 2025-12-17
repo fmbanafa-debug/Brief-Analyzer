@@ -675,10 +675,7 @@ ${article.url ? `Source URL: ${article.url}\n` : ''}
             
             // Handle file upload and analysis
             const handleFile = async (file) => {
-                if (!apiKey) {
-                    showMessage("API key is not configured. Please ensure your environment has a valid key.", "error");
-                    return;
-                }
+                
                 if (!file) {
                     showMessage('Please select an image or PDF file.', 'error');
                     return;
@@ -820,11 +817,6 @@ ${article.url ? `Source URL: ${article.url}\n` : ''}
 
             // Handle Market Impact Analysis
             const handleMarketAnalysis = async (articles) => {
-                if (!apiKey) {
-                    showMessage("API key is not configured.", "error");
-                    analysisResult.innerHTML = `<p class="text-red-400">Analysis failed: API key is missing.</p>`;
-                    return;
-                }
 
                 const articlesText = articles.map(a => `Title: ${a.title}\nSummary: ${a.summary}`).join('\n\n---\n\n');
                 
@@ -927,10 +919,7 @@ ${article.url ? `Source URL: ${article.url}\n` : ''}
 
             // Handle summary and translation within the modal
             const handleModalSummarizeTranslate = async (fullDescription) => {
-                if (!apiKey) {
-                    showMessage("API key is not configured. Please ensure your environment has a valid key.", "error");
-                    return;
-                }
+            
                 const modalButton = document.getElementById('summarizeTranslateModalBtn');
                 const modalTranslateResult = document.getElementById('modalTranslateResult');
 
