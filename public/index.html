@@ -264,7 +264,7 @@ Source URL: https://example.com
 
             const availableTags = ["AI", "Entertainment", "Finance", "Industrial", "Pharma", "Real Estate", "Retail", "Technological Services", "Telecommunications"].sort();
             const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=";
-            const apiKey = "/api/generate.js";
+            const apiKey = "";
 
             const initialNews = [
                 {
@@ -675,6 +675,7 @@ ${article.url ? `Source URL: ${article.url}\n` : ''}
             
             // Handle file upload and analysis
             const handleFile = async (file) => {
+                if (!apiKey) {
                     showMessage("API key is not configured. Please ensure your environment has a valid key.", "error");
                     return;
                 }
@@ -733,7 +734,7 @@ ${article.url ? `Source URL: ${article.url}\n` : ''}
                     };
 
                     try {
-                        const response = await fetch('/api/generate.js', {
+                        const response = await fetch('/api/generate', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify(payload)
@@ -795,7 +796,7 @@ ${article.url ? `Source URL: ${article.url}\n` : ''}
                 };
 
                 try {
-                    const response = await fetch('/api/generate.js', {
+                    const response = await fetch('/api/generate', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
@@ -819,6 +820,7 @@ ${article.url ? `Source URL: ${article.url}\n` : ''}
 
             // Handle Market Impact Analysis
             const handleMarketAnalysis = async (articles) => {
+                if (!apiKey) {
                     showMessage("API key is not configured.", "error");
                     analysisResult.innerHTML = `<p class="text-red-400">Analysis failed: API key is missing.</p>`;
                     return;
@@ -852,7 +854,7 @@ ${article.url ? `Source URL: ${article.url}\n` : ''}
                 };
 
                 try {
-                    const response = await fetch('/api/generate.js', {
+                    const response = await fetch('/api/generate', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
@@ -925,6 +927,7 @@ ${article.url ? `Source URL: ${article.url}\n` : ''}
 
             // Handle summary and translation within the modal
             const handleModalSummarizeTranslate = async (fullDescription) => {
+                if (!apiKey) {
                     showMessage("API key is not configured. Please ensure your environment has a valid key.", "error");
                     return;
                 }
@@ -950,7 +953,7 @@ ${article.url ? `Source URL: ${article.url}\n` : ''}
                 };
 
                 try {
-                    const response = await fetch('/api/generate.js', {
+                    const response = await fetch('/api/generate', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify(payload)
@@ -1237,4 +1240,3 @@ ${article.url ? `Source URL: ${article.url}\n` : ''}
     </script>
 </body>
 </html>
-
