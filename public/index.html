@@ -1114,6 +1114,29 @@ ${article.url ? `Source URL: ${article.url}\n` : ''}
             searchInput.addEventListener('input', renderNews);
 
             newsGrid.addEventListener('click', (e) => {
+                const target = e.target;
+                const card = target.closest('.news-card');
+                if (!card) return;
+    
+                const index = parseInt(card.dataset.index, 10);
+                const articles = getDisplayArticles(); // THE FIX: always gets the current view
+                const article = articles[index];
+                if (!article) return;
+
+                if (target.classList.contains('read-more-btn')) {
+                    // PASTE YOUR "READ MORE" LOGIC HERE
+                    // Use 'article' variable to access data
+                } 
+                else if (target.classList.contains('share-btn')) {
+                    // PASTE YOUR "SHARE" LOGIC HERE
+                } 
+                else if (target.classList.contains('edit-btn')) {
+                    // PASTE YOUR "EDIT" LOGIC HERE
+                } 
+                else if (target.classList.contains('delete-btn')) {
+                    // PASTE YOUR "DELETE" LOGIC HERE
+                }
+            });
                 const readMoreBtn = e.target.closest('.read-more-btn');
 
                 if (readMoreBtn) {
