@@ -622,6 +622,7 @@ ${article.url ? `Source URL: ${article.url}\n` : ''}
 
             // Function to render news articles
             function renderNews() {
+                const articles = getDisplayArticles();
                 const selectedTag = tagFilter.value;
                 const filterText = searchInput.value.toLowerCase();
                 let newsArticles = loadNews();
@@ -889,6 +890,7 @@ ${article.url ? `Source URL: ${article.url}\n` : ''}
             };
             
             // Render Market Analysis Results
+            const articles = getDisplayArticles();
             const renderAnalysisResults = (data) => {
                 if (!data) {
                     analysisResult.innerHTML = `<p class="text-red-400">Failed to parse analysis results.</p>`;
@@ -1114,6 +1116,7 @@ ${article.url ? `Source URL: ${article.url}\n` : ''}
             searchInput.addEventListener('input', renderNews);
 
             newsGrid.addEventListener('click', (e) => {
+                const articles = getDisplayArticles();
                 const readMoreBtn = e.target.closest('.read-more-btn');
 
                 if (readMoreBtn) {
@@ -1146,6 +1149,7 @@ ${article.url ? `Source URL: ${article.url}\n` : ''}
                 } else if (e.target.closest('.share-btn')) {
                     const card = e.target.closest('.news-card');
                     const index = card.getAttribute('data-index');
+                    const articles = getDisplayArticles();
                     const article = loadNews()[index];
                     
                     const shareText = `*${article.title}*\n\n${article.summary}\n\nFull details: ${article.url || "N/A"}`;
