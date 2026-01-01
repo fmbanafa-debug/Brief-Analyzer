@@ -1114,33 +1114,59 @@ ${article.url ? `Source URL: ${article.url}\n` : ''}
             searchInput.addEventListener('input', renderNews);
 
             newsGrid.addEventListener('click', (e) => {
-                const readMoreBtn = e.target.closest('.read-more-btn');
+    const target = e.target;
+    const card = target.closest('.news-card');
+    if (!card) return;
+    
+    const index = parseInt(card.dataset.index, 10);
+    const articles = getDisplayArticles(); // <--- THE KEY FIX
+    const article = articles[index];
+    if (!article) return;
 
-                if (readMoreBtn) {
-                    const index = readMoreBtn.getAttribute('data-index');
-                    const newsArticles = loadNews();
-                    newsArticles.sort((a, b) => new Date(b.date) - new Date(a.date));
-            
-                    const article = newsArticles[index];
-                    
-                    if (!article) return;
-
-                    modalTitle.textContent = article.title;
-                    modalContent.innerHTML = `
-                        <p class="text-sm font-semibold text-gray-400 mb-2">Full Description:</p>
-                        <div class="mb-4">${article.fullDescription}</div>
-                        <div class="space-y-2">
-                            <button id="summarizeTranslateModalBtn" class="w-full px-4 py-2 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors">
-                                Summarize & Translate (Arabic) ✨
-                            </button>
-                            <textarea id="modalTranslateResult" rows="2" class="w-full p-2 bg-gray-700 border-gray-600 rounded-lg focus:outline-none" placeholder="Arabic summary will appear here..." readonly></textarea>
-                        </div>
-                    `;
-
-                    // Set up event listener for the new button inside the modal
+    if (target.classList.contains('read-more-btn')) {
+        modalTitle.textContent = article.title;
+        modalContent.innerHTML = `
+            <p class="text-sm font-semibold text-gray-400 mb-2">Full Description:</p>
+            <div class="mb-4">${article.fullDescription || "No description."}</div>
+        `;
+        // Set up event listener for the new button inside the modal
                     document.getElementById('summarizeTranslateModalBtn').addEventListener('click', () => {
                         handleModalSummarizeTranslate(article.fullDescription);
-                    });
+                        
+        modal.classList.remove('hidden');
+    } else if (target.classList.contains('share-btn')) {
+        // Your share logic...
+        const shareText = `*${article.title}*\n\n${article.summary}`;
+        const temp = document.createElement('textarea');
+        temp.value = shareText;
+        document.body.appendChild(temp);
+        temp.select();
+        document.execCommand('copy');
+        document.body.removeChild(temp);
+        showMessage('Copied to clipboard!');
+    } else if (target.classList.contains('edit-btn')) {
+        // Your edit logic...
+        newsTitleInput.value = article.title;
+        newsSummaryInput.value = article.summary;
+        newsFullDescriptionInput.value = article.fullDescription;
+        newsTagInput.value = article.tag;
+        newsUrlInput.value = article.url || "";
+        editingArticleOriginalRef = article; 
+        formTitle.textContent = "Edit Article";
+        addFormContainer.classList.remove('hidden');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else if (target.classList.contains('delete-btn')) {
+        // Your delete logic...
+        let all = loadNews();
+        const masterIdx = all.findIndex(a => a.title === article.title && a.date === article.date);
+        if (masterIdx > -1) {
+            all.splice(masterIdx, 1);
+            saveNews(all);
+            renderNews();
+            showMessage('Deleted.');
+        }
+    }
+});
 
                     modal.classList.remove('hidden');
                 } else if (e.target.closest('.share-btn')) {
