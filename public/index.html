@@ -1130,6 +1130,36 @@ ${article.url ? `Source URL: ${article.url}\n` : ''}
                 return articles;
             }
 
+
+            newsGrid.addEventListener('click', (e) => {
+                const readMoreBtn = e.target.closest('.read-more-btn');
+
+                if (readMoreBtn) {
+                    const index = readMoreBtn.getAttribute('data-index');
+                    const newsArticles = loadNews();
+                    newsArticles.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+                    const article = newsArticles[index];
+                    
+                    if (!article) return;
+
+                    modalTitle.textContent = article.title;
+                    modalContent.innerHTML = `
+                        <p class="text-sm font-semibold text-gray-400 mb-2">Full Description:</p>
+                        <div class="mb-4">${article.fullDescription}</div>
+                        <div class="space-y-2">
+                            <button id="summarizeTranslateModalBtn" class="w-full px-4 py-2 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors">
+                                Summarize & Translate (Arabic) ✨
+                            </button>
+                            <textarea id="modalTranslateResult" rows="2" class="w-full p-2 bg-gray-700 border-gray-600 rounded-lg focus:outline-none" placeholder="Arabic summary will appear here..." readonly></textarea>
+                        </div>
+                    `;
+
+                    // Set up event listener for the new button inside the modal
+                    document.getElementById('summarizeTranslateModalBtn').addEventListener('click', () => {
+                        handleModalSummarizeTranslate(article.fullDescription);
+                    });
+
             
             newsGrid.addEventListener('click', (e) => {
                 const target = e.target;
