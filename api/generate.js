@@ -8,9 +8,11 @@ export default async function handler(request, response) {
 
     // 2. Get the API Key securely from Vercel Environment Variables
     const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-        return response.status(500).json({ error: 'Server Error: API Key missing' });
-    }
+  if (!apiKey) {
+    return res.status(500).json({ 
+      error: 'API key is missing. Ensure GEMINI_API_KEY is set in Vercel Environment Variables and redeploy.' 
+    });
+  }
 
     try {
         // 3. Extract the exact payload your frontend sends
