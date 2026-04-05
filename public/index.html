@@ -701,10 +701,11 @@ ${article.url ? `Source URL: ${article.url}\n` : ''}
                     return;
                 }
                 
-                const fileType = file.type;
+                const fileName = file.name.toLowerCase();
                 let prompt;
 
-                if (fileType.startsWith('image/')) {
+                // Enhanced check for images (MIME type OR file extension)
+                if (file.type.startsWith('image/') || fileName.endsWith('.png') || fileName.endsWith('.jpg') || fileName.endsWith('.jpeg')) {
                     prompt = `Act as a news editor. Analyze the following screenshot of a news article. Extract the following information as a JSON object:
                     1. "title" (string): The main headline of the article.
                     2. "summary" (string): A brief, 1-2 sentence summary of the news.
