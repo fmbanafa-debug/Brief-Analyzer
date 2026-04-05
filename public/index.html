@@ -701,16 +701,16 @@ ${article.url ? `Source URL: ${article.url}\n` : ''}
                     return;
                 }
                 
-                const fileName = file.name.toLowerCase();
+                const fileType = file.type;
                 let prompt;
 
-                // Enhanced check for images (MIME type OR file extension)
-                if (file.type.startsWith('image/') || fileName.endsWith('.png') || fileName.endsWith('.jpg') || fileName.endsWith('.jpeg')) {
+                if (fileType.startsWith('image/')) {
                     prompt = `Act as a news editor. Analyze the following screenshot of a news article. Extract the following information as a JSON object:
                     1. "title" (string): The main headline of the article.
                     2. "summary" (string): A brief, 1-2 sentence summary of the news.
                     3. "fullDescription" (string): An extensive description of the news in points. Use bullet points for each new point. Start each bullet point with a bolded keyword.
                     4. "tag" (string): A single tag from the following list: ${availableTags.join(', ')}. Choose the most relevant tag.
+
                     
                     Respond with only the JSON object.`;
                 } else if (fileType === 'application/pdf') {
