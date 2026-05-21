@@ -1,7 +1,7 @@
 {
   "name": "banafa's-brief",
   "version": "1.0.0",
-  "dependencies": {
+  "dependencies": {"tesseract.js": "^5.0.0"
     "@google/generative-ai": "latest"
   }
 }
