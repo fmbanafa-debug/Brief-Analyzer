@@ -28,7 +28,7 @@ export default async function handler(request, response) {
         // ... after initializing genAI ...
 
         const model = genAI.getGenerativeModel({ 
-        model: "gemini-1.5-flash-latest",
+        model: "gemini-flash-latest",
         // Add System Instructions here to force "OCR Mode"
         systemInstruction: "You are a specialized Document OCR Analyzer. Your goal is to extract every piece of text from provided images or PDFs with 100% accuracy. Maintain the original structure, identify headers, and do not hallucinate text that isn't there."
         });
