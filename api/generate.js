@@ -22,7 +22,7 @@ export default async function handler(request, response) {
         // 4. Initialize Gemini
         const genAI = new GoogleGenerativeAI(apiKey);
         
-        // Use flash model (you can change this to 'gemini-1.5-pro' if needed)
+        // Use flash model
         const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
 
         // ... after initializing genAI ...
@@ -30,7 +30,7 @@ export default async function handler(request, response) {
         const model = genAI.getGenerativeModel({ 
         model: "gemini-flash-latest",
         // Add System Instructions here to force "OCR Mode"
-        systemInstruction: "You are a specialized Document OCR Analyzer. Your goal is to extract every piece of text from provided images or PDFs with 100% accuracy. Maintain the original structure, identify headers, and do not hallucinate text that isn't there."
+        systemInstruction: "You are a specialized image OCR Analyzer. Your goal is to extract every piece of text from provided images with 100% accuracy. Maintain the original structure, identify headers, and do not hallucinate text that isn't there."
         });
 
         // ... continue to generateContent ...
