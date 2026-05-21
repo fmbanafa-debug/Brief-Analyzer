@@ -25,17 +25,6 @@ export default async function handler(request, response) {
         // Use flash model
         const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
 
-        // ... after initializing genAI ...
-
-        const model = genAI.getGenerativeModel({ 
-        model: "gemini-flash-latest",
-        // Add System Instructions here to force "OCR Mode"
-        systemInstruction: "You are a specialized image OCR Analyzer. Your goal is to extract every piece of text from provided images with 100% accuracy. Maintain the original structure, identify headers, and do not hallucinate text that isn't there."
-        });
-
-        // ... continue to generateContent ...
-
-        
         // 5. Generate Content
         // We pass the "contents" and "generationConfig" exactly as the frontend prepared them
         const result = await model.generateContent({
