@@ -1,225 +1,38 @@
 <!DOCTYPE html>
 <html lang="en">
-<head> 
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Banafa's Daily Brief</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #121212;
-        }
-        .container {
-            max-width: 1200px;
-        }
-        .news-card {
-            min-height: 200px;
-        }
-        .message-box {
-            position: fixed;
-            top: 1rem;
-            right: 1rem;
-            z-index: 50;
-        }
-        .drop-area {
-            border: 2px dashed #4B5563;
-            background-color: #1F2937;
-            transition: all 0.3s ease;
-        }
-        .drop-area.active {
-            border-color: #6366F1;
-            background-color: #111827;
-        }
-        .header-bg {
-            background: linear-gradient(135deg, #A855F7, #6D28D9);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-    </style>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Banafa's Daily Brief</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background: #121212; color: #ececec; font-family: 'Inter', sans-serif; }
+    .message-box { position: fixed; top: 1rem; right: 1rem; z-index: 50; display:none }
+    .message-box.visible { display:block }
+  </style>
 </head>
-<body class="bg-gray-950 text-gray-200">
+<body>
+  <div id="message-box" class="message-box p-3 rounded font-bold"></div>
+  <div class="container mx-auto max-w-xl p-8">
+    <h1 class="text-2xl mb-8">News Analyzer (Stable Demo)</h1>
 
-    <!-- Message Box for Alerts -->
-    <div id="message-box" class="message-box p-4 bg-green-500 text-white rounded-lg shadow-xl hidden transition-all duration-300 ease-in-out">
-        Article added successfully!
+    <div id="drop-area" class="p-8 rounded bg-gray-800 text-center border-2 border-dashed border-purple-500 cursor-pointer mb-5">
+      <div>Drag &amp; Drop a PNG/JPEG screenshot or PDF here,<br>or click/copy to browse</div>
+      <input id="imageUpload" type="file" accept="image/*,application/pdf" class="hidden" />
     </div>
-
-    <div class="container mx-auto p-4 md:p-8">
-        <!-- Header Section -->
-        <header class="text-center mb-12">
-            <div class="flex items-center justify-center mb-4">
-                <img src="https://placehold.co/60x60/8B5CF6/FFFFFF?text=Logo" alt="Banafa Logo" class="h-16 w-16 mr-4">
-                <h1 class="text-5xl md:text-6xl font-bold header-bg">Banafa's Daily Brief</h1>
-            </div>
-            <p class="text-lg md:text-xl text-gray-400">Your curated news, on your own terms.</p>
-        </header>
-
-        <!-- Filter and Add Section -->
-        <div class="mb-12 space-y-6 md:space-y-0 md:flex md:items-center md:space-x-4">
-            <div class="flex-grow">
-                <label for="tagFilter" class="block text-sm font-medium text-gray-400 mb-1">Filter by Tag</label>
-                <select id="tagFilter" class="w-full px-4 py-2 bg-gray-800 text-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
-                    <!-- Options will be populated by JavaScript -->
-                </select>
-            </div>
-            <div class="relative flex-grow">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg class="h-5 w-5 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path>
-                    </svg>
-                </div>
-                <input type="text" id="searchInput" placeholder="Search by keyword..." class="w-full pl-10 pr-4 py-2 bg-gray-800 text-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
-            </div>
-            <div class="flex space-x-2 flex-wrap">
-                 <button id="analyzeImpactBtn" class="w-full md:w-auto mt-2 md:mt-0 px-6 py-2 bg-purple-600 text-white font-medium rounded-xl hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors">
-                    Analyze Market Impact ✨
-                </button>
-                <button id="selectAllBtn" class="w-full md:w-auto mt-2 md:mt-0 px-6 py-2 bg-yellow-600 text-white font-medium rounded-xl hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition-colors">
-                    Select All
-                </button>
-                <button id="importBtn" class="w-full md:w-auto mt-2 md:mt-0 px-6 py-2 bg-teal-600 text-white font-medium rounded-xl hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-colors">
-                    Import
-                </button>
-                <button id="exportBtn" class="w-full md:w-auto mt-2 md:mt-0 px-6 py-2 bg-green-600 text-white font-medium rounded-xl hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors">
-                    Export
-                </button>
-                <button id="showAddFormBtn" class="w-full md:w-auto mt-2 md:mt-0 px-6 py-2 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors">
-                    Add New Article
-                </button>
-            </div>
-        </div>
-
-        <!-- Add News Form (Initially hidden) -->
-        <div id="addFormContainer" class="hidden bg-gray-800 p-6 md:p-8 rounded-2xl shadow-xl mb-12">
-            <h2 id="formTitle" class="text-2xl font-bold mb-4">Add a New Article</h2>
-
-            <div class="mt-6 space-y-4">
-                <!-- Drag & Drop Area -->
-                <div id="drop-area" class="drop-area text-center p-8 rounded-lg mb-6 cursor-pointer">
-                    <p class="text-gray-400 text-sm">Drag & drop a news screenshot (PNG/JPEG) or PDF here, or</p>
-                    <label for="imageUpload" class="text-blue-400 hover:text-blue-300 font-medium cursor-pointer">
-                        Browse to upload
-                    </label>
-                    <input type="file" id="imageUpload" accept="image/*, application/pdf" class="hidden">
-                </div>
-                <button id="analyzeImageBtn" class="w-full mt-4 px-6 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
-                    Analyze Document
-                </button>
-                <div id="loadingIndicator" class="mt-4 text-center text-blue-400 hidden">
-                    <div class="animate-spin inline-block">⏳</div>
-                    <span id="loadingText">Analyzing document content...</span>
-                </div>
-            </div>
-
-            <form id="addNewsForm" class="mt-6 space-y-4">
-                <div>
-                    <label for="newsTitle" class="block text-sm font-medium text-gray-300">Title</label>
-                    <input type="text" id="newsTitle" required class="w-full mt-1 p-2 bg-gray-700 border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <div class="flex items-center space-x-2 mt-2">
-                        <button type="button" id="generateHeadlineBtn" class="px-4 py-2 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors">
-                            Generate Headline ✨
-                        </button>
-                    </div>
-                </div>
-                <div>
-                    <label for="newsSummary" class="block text-sm font-medium text-gray-300">Summary (Short)</label>
-                    <textarea id="newsSummary" rows="2" required class="w-full mt-1 p-2 bg-gray-700 border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
-                </div>
-                <div>
-                    <label for="newsFullDescription" class="block text-sm font-medium text-gray-300">Full Description (Extensive, in points)</label>
-                    <textarea id="newsFullDescription" rows="5" required class="w-full mt-1 p-2 bg-gray-700 border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
-                </div>
-                <div>
-                    <label for="newsTag" class="block text-sm font-medium text-gray-300">Tag</label>
-                    <select id="newsTag" required class="w-full mt-1 p-2 bg-gray-700 border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <!-- Options will be populated by JavaScript -->
-                    </select>
-                </div>
-                <div>
-                    <label for="sourceUrl" class="block text-sm font-medium text-gray-300">Source URL (Optional)</label>
-                    <input type="url" id="sourceUrl" placeholder="https://example.com/article" class="w-full mt-1 p-2 bg-gray-700 border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                </div>
-                <div class="flex space-x-4">
-                    <button type="submit" class="w-full px-6 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
-                        Save Article
-                    </button>
-                    <button type="button" id="cancelFormBtn" class="w-full px-6 py-3 bg-gray-600 text-white font-bold rounded-xl hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors">
-                        Cancel
-                    </button>
-                </div>
-            </form>
-        </div>
-        
-        <!-- News Grid -->
-        <div id="newsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <!-- News articles will be dynamically injected here by JavaScript -->
-        </div>
-
-        <!-- No News Message -->
-        <div id="noNewsMessage" class="hidden text-center mt-16 text-gray-500 text-lg">
-            No articles found. Add some news using the button above!
-        </div>
+    <button id="analyzeImageBtn" class="w-full mt-2 mb-4 px-4 py-2 bg-blue-600 text-white font-bold rounded hover:bg-blue-700">Analyze</button>
+    <div id="loadingIndicator" class="my-4 text-blue-400" style="display:none;">
+      <span id="loadingText">Analyzing...</span>
     </div>
-
-    <!-- Modal for Expanded View -->
-    <div id="modal" class="fixed inset-0 bg-gray-900 bg-opacity-80 flex items-center justify-center p-4 hidden">
-        <div class="bg-gray-800 rounded-2xl p-8 max-w-2xl w-full relative shadow-xl">
-            <button id="closeModal" class="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
-            <h3 id="modalTitle" class="text-2xl font-bold text-white mb-4"></h3>
-            <div id="modalContent" class="text-gray-300 overflow-y-auto max-h-[70vh]"></div>
-        </div>
+    <div>
+      <input id="newsTitle" placeholder="Title" class="w-full mb-3 p-2 rounded bg-gray-700" />
+      <textarea id="newsSummary" rows="2" placeholder="Summary" class="w-full mb-3 p-2 rounded bg-gray-700"></textarea>
+      <textarea id="newsFullDescription" rows="4" placeholder="Full Description" class="w-full mb-3 p-2 rounded bg-gray-700"></textarea>
+      <input id="newsTag" placeholder="Tag" class="w-full mb-3 p-2 rounded bg-gray-700" />
     </div>
+  </div>
 
-    <!-- Modal for Import -->
-    <div id="importModal" class="fixed inset-0 bg-gray-900 bg-opacity-80 flex items-center justify-center p-4 hidden">
-        <div class="bg-gray-800 rounded-2xl p-8 max-w-2xl w-full relative shadow-xl">
-            <h3 class="text-2xl font-bold text-white mb-4">Import Articles</h3>
-            <p class="text-gray-400 mb-4">Paste the content from your exported .txt file below.</p>
-            <textarea id="importData" rows="10" class="w-full mt-1 p-2 bg-gray-700 border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="---
-Title: Example Title
-Date: September 2, 2025
-Tag: Finance
-Summary: This is an example summary.
-Source URL: https://example.com
----
-..."></textarea>
-            <div class="flex space-x-4 mt-4">
-                <button id="confirmImportBtn" class="w-full px-6 py-3 bg-teal-600 text-white font-bold rounded-xl hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-colors">
-                    Import
-                </button>
-                <button id="cancelImportBtn" class="w-full px-6 py-3 bg-gray-600 text-white font-bold rounded-xl hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors">
-                    Cancel
-                </button>
-            </div>
-        </div>
-    </div>
-
-     <!-- Modal for Market Analysis -->
-    <div id="analysisModal" class="fixed inset-0 bg-gray-900 bg-opacity-80 flex items-center justify-center p-4 hidden">
-        <div class="bg-gray-800 rounded-2xl p-8 max-w-3xl w-full relative shadow-xl">
-            <button id="closeAnalysisModal" class="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
-            <h3 class="text-2xl font-bold text-white mb-4">Market Impact Analysis</h3>
-            <div id="analysisResult" class="text-gray-300 overflow-y-auto max-h-[70vh]">
-                <!-- Analysis results will be dynamically injected here -->
-            </div>
-        </div>
-    </div>
-
-
-    <script>
+  <script>
     // DOM elements
     const imageUpload = document.getElementById("imageUpload");
     const analyzeImageBtn = document.getElementById("analyzeImageBtn");
@@ -354,10 +167,6 @@ Source URL: https://example.com
       }
     };
     dropArea.onclick = () => imageUpload.click();
-
-                }
-            });
-        })();
-    </script>
+  </script>
 </body>
 </html>
