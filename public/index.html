@@ -3,1280 +3,1156 @@
 <head> 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Banafa's Daily Brief</title>
+    <title>Banafa's Daily Brief - AI Document Analyzer</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- jsPDF for exporting reports -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #121212;
+            background-color: #0b0f19;
         }
         .container {
-            max-width: 1200px;
+            max-width: 1280px;
         }
-        .news-card {
-            min-height: 200px;
+        /* Custom scrollbars for a premium dark look */
+        ::-webkit-scrollbar {
+            width: 8px;
         }
-        .message-box {
-            position: fixed;
-            top: 1rem;
-            right: 1rem;
-            z-index: 50;
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
         }
-        .drop-area {
-            border: 2px dashed #4B5563;
-            background-color: #1F2937;
-            transition: all 0.3s ease;
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
         }
-        .drop-area.active {
-            border-color: #6366F1;
-            background-color: #111827;
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
         }
-        .header-bg {
-            background: linear-gradient(135deg, #A855F7, #6D28D9);
+        /* Gradient header text styling */
+        .gradient-brand {
+            background: linear-gradient(135deg, #a78bfa 0%, #6366f1 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
+        /* Glassmorphism elements */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .glass-card {
+            background: rgba(30, 41, 59, 0.45);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .glass-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(99, 102, 241, 0.3);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(99, 102, 241, 0.1);
+        }
+        /* Drag and Drop Zone styling */
+        .drop-area {
+            border: 2px dashed #475569;
+            background-color: rgba(30, 41, 59, 0.3);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .drop-area.drag-active {
+            border-color: #818cf8;
+            background-color: rgba(99, 102, 241, 0.15);
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
+        }
+        /* Fade animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .animate-modal {
+            animation: fadeIn 0.2s ease-out forwards;
+        }
     </style>
 </head>
-<body class="bg-gray-950 text-gray-200">
+<body class="text-slate-200 min-h-screen pb-16">
 
-    <!-- Message Box for Alerts -->
-    <div id="message-box" class="message-box p-4 bg-green-500 text-white rounded-lg shadow-xl hidden transition-all duration-300 ease-in-out">
-        Article added successfully!
-    </div>
+    <!-- Toast Notifications Box -->
+    <div id="message-box" class="fixed top-6 right-6 z-50 p-4 rounded-xl shadow-2xl hidden transition-all duration-300 max-w-sm border border-opacity-20 font-medium"></div>
 
-    <div class="container mx-auto p-4 md:p-8">
-        <!-- Header Section -->
-        <header class="text-center mb-12">
-            <div class="flex items-center justify-center mb-4">
-                <img src="https://placehold.co/60x60/8B5CF6/FFFFFF?text=Logo" alt="Banafa Logo" class="h-16 w-16 mr-4">
-                <h1 class="text-5xl md:text-6xl font-bold header-bg">Banafa's Daily Brief</h1>
-            </div>
-            <p class="text-lg md:text-xl text-gray-400">Your curated news, on your own terms.</p>
-        </header>
-
-        <!-- Filter and Add Section -->
-        <div class="mb-12 space-y-6 md:space-y-0 md:flex md:items-center md:space-x-4">
-            <div class="flex-grow">
-                <label for="tagFilter" class="block text-sm font-medium text-gray-400 mb-1">Filter by Tag</label>
-                <select id="tagFilter" class="w-full px-4 py-2 bg-gray-800 text-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
-                    <!-- Options will be populated by JavaScript -->
-                </select>
-            </div>
-            <div class="relative flex-grow">
-                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <svg class="h-5 w-5 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path>
-                    </svg>
+    <!-- Main Navigation & Header -->
+    <header class="border-b border-slate-800/80 sticky top-0 z-40 bg-slate-950/80 backdrop-blur-md">
+        <div class="container mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center font-bold text-white text-xl shadow-lg shadow-indigo-500/20">
+                    B
                 </div>
-                <input type="text" id="searchInput" placeholder="Search by keyword..." class="w-full pl-10 pr-4 py-2 bg-gray-800 text-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+                <div>
+                    <h1 class="text-2xl font-bold gradient-brand tracking-tight">Banafa's Daily Brief</h1>
+                    <p class="text-xs text-slate-400">AI-Powered Strategic Document Intelligence</p>
+                </div>
             </div>
-            <div class="flex space-x-2 flex-wrap">
-                 <button id="analyzeImpactBtn" class="w-full md:w-auto mt-2 md:mt-0 px-6 py-2 bg-purple-600 text-white font-medium rounded-xl hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors">
-                    Analyze Market Impact ✨
+            
+            <!-- API Key Management Panel inside Header -->
+            <div class="flex items-center gap-2 bg-slate-900/90 px-3 py-2 rounded-xl border border-slate-800 w-full sm:w-auto">
+                <div class="text-xs text-slate-400 shrink-0">Gemini Key:</div>
+                <input type="password" id="apiKeyInput" placeholder="Paste Gemini API Key..." 
+                       class="bg-slate-950 border border-slate-700/60 rounded-lg px-2 py-1 text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 w-full sm:w-48 transition-all">
+                <button id="saveKeyBtn" class="bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors shrink-0">
+                    Save
                 </button>
-                <button id="selectAllBtn" class="w-full md:w-auto mt-2 md:mt-0 px-6 py-2 bg-yellow-600 text-white font-medium rounded-xl hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition-colors">
-                    Select All
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 pt-8">
+        
+        <!-- API Key Advisory Alert (Shows if key is missing) -->
+        <div id="apiKeyAlert" class="mb-6 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-pulse">
+            <div class="flex items-center gap-2">
+                <span class="text-lg">⚠️</span>
+                <span><strong>API Key Required:</strong> To use the AI document OCR/Analyzer and Market Analyzer, please input your Gemini API key in the top right.</span>
+            </div>
+            <a href="https://aistudio.google.com/" target="_blank" class="text-xs bg-amber-500 text-slate-950 px-3 py-1.5 rounded-lg font-bold hover:bg-amber-400 transition-colors shrink-0">
+                Get Free Key
+            </a>
+        </div>
+
+        <!-- Filter, Search and Primary CTA Controls -->
+        <div class="glass-panel p-6 rounded-2xl mb-8 flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between">
+            <div class="flex flex-col sm:flex-row gap-4 flex-grow max-w-3xl">
+                <!-- Tag Filter dropdown -->
+                <div class="w-full sm:w-1/3">
+                    <label for="tagFilter" class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">Filter by Category</label>
+                    <select id="tagFilter" class="w-full px-4 py-2.5 bg-slate-900 border border-slate-700/80 text-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all cursor-pointer">
+                        <option value="ALL">All Categories</option>
+                    </select>
+                </div>
+                <!-- Keyword search box -->
+                <div class="w-full sm:w-2/3">
+                    <label for="searchInput" class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">Search Portal</label>
+                    <div class="relative">
+                        <input type="text" id="searchInput" placeholder="Search keywords in titles, summaries, or details..." 
+                               class="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-700/80 text-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+                        <span class="absolute left-3.5 top-3.5 text-slate-500 text-sm">🔍</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action buttons -->
+            <div class="flex items-end gap-3 shrink-0">
+                <button id="analyzeImpactBtn" class="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 px-6 py-3 rounded-xl font-bold shadow-lg shadow-indigo-600/10 transition-all hover:scale-[1.02] active:scale-[0.98]">
+                    <span>Analyze Market</span>
+                    <span class="text-amber-300">✨</span>
                 </button>
-                <button id="importBtn" class="w-full md:w-auto mt-2 md:mt-0 px-6 py-2 bg-teal-600 text-white font-medium rounded-xl hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-colors">
-                    Import
-                </button>
-                <button id="exportBtn" class="w-full md:w-auto mt-2 md:mt-0 px-6 py-2 bg-green-600 text-white font-medium rounded-xl hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors">
-                    Export
-                </button>
-                <button id="showAddFormBtn" class="w-full md:w-auto mt-2 md:mt-0 px-6 py-2 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors">
-                    Add New Article
+                <button id="showAddFormBtn" class="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 px-6 py-3 rounded-xl font-semibold transition-all hover:scale-[1.02] active:scale-[0.98]">
+                    <span>Add New Article</span>
                 </button>
             </div>
         </div>
 
-        <!-- Add News Form (Initially hidden) -->
-        <div id="addFormContainer" class="hidden bg-gray-800 p-6 md:p-8 rounded-2xl shadow-xl mb-12">
-            <h2 id="formTitle" class="text-2xl font-bold mb-4">Add a New Article</h2>
-
-            <div class="mt-6 space-y-4">
-                <!-- Drag & Drop Area -->
-                <div id="drop-area" class="drop-area text-center p-8 rounded-lg mb-6 cursor-pointer">
-                    <p class="text-gray-400 text-sm">Drag & drop a news screenshot (PNG/JPEG) or PDF here, or</p>
-                    <label for="imageUpload" class="text-blue-400 hover:text-blue-300 font-medium cursor-pointer">
-                        Browse to upload
-                    </label>
-                    <input type="file" id="imageUpload" accept="image/*, application/pdf" class="hidden">
+        <!-- Integrated AI Document Upload & Article Form Panel -->
+        <div id="addFormContainer" class="hidden glass-panel p-8 rounded-2xl mb-8 border-l-4 border-l-indigo-500 transition-all duration-300">
+            <div class="flex items-center justify-between mb-6 border-b border-slate-850 pb-4">
+                <div>
+                    <h2 id="formTitle" class="text-xl font-bold text-white">Add Strategic Intelligence</h2>
+                    <p class="text-xs text-slate-400 mt-1">Upload a snapshot/PDF for instant AI data-entry, or fill fields manually.</p>
                 </div>
-                <button id="analyzeImageBtn" class="w-full mt-4 px-6 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
-                    Analyze Document
-                </button>
-                <div id="loadingIndicator" class="mt-4 text-center text-blue-400 hidden">
-                    <div class="animate-spin inline-block">⏳</div>
-                    <span id="loadingText">Analyzing document content...</span>
+                <button id="closeFormBtn" class="text-slate-400 hover:text-white transition-colors text-lg">✕</button>
+            </div>
+
+            <!-- Drag and Drop Active Upload Area -->
+            <div id="drop-area" class="drop-area text-center p-8 rounded-xl cursor-pointer mb-6 group">
+                <div class="flex flex-col items-center justify-center gap-3">
+                    <div class="w-14 h-14 rounded-full bg-slate-800/80 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
+                        📤
+                    </div>
+                    <p class="font-semibold text-slate-200 text-sm sm:text-base">
+                        Drag & drop a news screenshot (PNG/JPEG), document or PDF here
+                    </p>
+                    <p class="text-xs text-slate-400">
+                        Or click to browse files. You can also copy any image to your clipboard and <strong class="text-indigo-400">paste it directly</strong> on this page!
+                    </p>
+                </div>
+                <!-- Hidden file selector input -->
+                <input id="imageUpload" type="file" accept="image/*,application/pdf" class="hidden" />
+            </div>
+
+            <!-- Previews & Upload Actions Row -->
+            <div id="previewContainer" class="hidden bg-slate-900/80 p-4 rounded-xl mb-6 border border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="text-2xl">📄</div>
+                    <div>
+                        <p id="fileNameDisplay" class="font-semibold text-xs text-white truncate max-w-xs md:max-w-md"></p>
+                        <p id="fileSizeDisplay" class="text-[10px] text-slate-400"></p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 w-full md:w-auto">
+                    <button id="analyzeImageBtn" type="button" class="w-full md:w-auto bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-6 py-2 rounded-lg text-xs transition-colors flex items-center justify-center gap-2">
+                        <span>🚀</span> Analyze Document
+                    </button>
+                    <button id="clearFileBtn" type="button" class="bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs px-3 py-2 rounded-lg border border-slate-700">
+                        Clear
+                    </button>
                 </div>
             </div>
 
-            <form id="addNewsForm" class="mt-6 space-y-4">
-                <div>
-                    <label for="newsTitle" class="block text-sm font-medium text-gray-300">Title</label>
-                    <input type="text" id="newsTitle" required class="w-full mt-1 p-2 bg-gray-700 border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <div class="flex items-center space-x-2 mt-2">
-                        <button type="button" id="generateHeadlineBtn" class="px-4 py-2 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors">
-                            Generate Headline ✨
-                        </button>
+            <!-- Real-time Loading Indicator -->
+            <div id="loadingIndicator" class="hidden bg-indigo-500/10 border border-indigo-500/20 p-5 rounded-xl text-center mb-6">
+                <div class="flex flex-col items-center gap-3">
+                    <svg class="animate-spin h-8 w-8 text-indigo-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <p class="text-sm font-medium text-indigo-300">Gemini is reading and processing document text details. Please wait...</p>
+                </div>
+            </div>
+
+            <!-- Form Content Fields -->
+            <form id="addNewsForm" class="space-y-5">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="md:col-span-2">
+                        <label for="newsTitle" class="block text-xs font-semibold text-slate-400 mb-1">Article Title *</label>
+                        <input type="text" id="newsTitle" placeholder="e.g., Fed Announces Interbank Rate Updates" required 
+                               class="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+                    </div>
+                    <div>
+                        <label for="newsTag" class="block text-xs font-semibold text-slate-400 mb-1">Strategic Tag / Category *</label>
+                        <select id="newsTag" required 
+                                class="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl text-white cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+                            <!-- Populated dynamically via script -->
+                        </select>
                     </div>
                 </div>
+
                 <div>
-                    <label for="newsSummary" class="block text-sm font-medium text-gray-300">Summary (Short)</label>
-                    <textarea id="newsSummary" rows="2" required class="w-full mt-1 p-2 bg-gray-700 border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                    <label for="newsSummary" class="block text-xs font-semibold text-slate-400 mb-1">Executive Summary *</label>
+                    <textarea id="newsSummary" rows="2" placeholder="Write a short summary of the news story..." required 
+                              class="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"></textarea>
                 </div>
+
                 <div>
-                    <label for="newsFullDescription" class="block text-sm font-medium text-gray-300">Full Description (Extensive, in points)</label>
-                    <textarea id="newsFullDescription" rows="5" required class="w-full mt-1 p-2 bg-gray-700 border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                    <label for="newsFullDescription" class="block text-xs font-semibold text-slate-400 mb-1">Details & Full Analysis (Separated by Bullet Points) *</label>
+                    <textarea id="newsFullDescription" rows="5" placeholder="- Detail Point 1&#10;- Detail Point 2&#10;- Detail Point 3" required 
+                              class="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"></textarea>
                 </div>
+
                 <div>
-                    <label for="newsTag" class="block text-sm font-medium text-gray-300">Tag</label>
-                    <select id="newsTag" required class="w-full mt-1 p-2 bg-gray-700 border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <!-- Options will be populated by JavaScript -->
-                    </select>
+                    <label for="newsUrl" class="block text-xs font-semibold text-slate-400 mb-1">Source URL (Optional)</label>
+                    <input type="url" id="newsUrl" placeholder="https://bloomberg.com/..." 
+                           class="w-full p-3 bg-slate-900 border border-slate-700 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
                 </div>
-                <div>
-                    <label for="sourceUrl" class="block text-sm font-medium text-gray-300">Source URL (Optional)</label>
-                    <input type="url" id="sourceUrl" placeholder="https://example.com/article" class="w-full mt-1 p-2 bg-gray-700 border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
-                </div>
-                <div class="flex space-x-4">
-                    <button type="submit" class="w-full px-6 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors">
+
+                <!-- Form CTAs -->
+                <div class="flex flex-col sm:flex-row gap-3 pt-3 border-t border-slate-800">
+                    <button type="submit" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-8 py-3 rounded-xl transition-all hover:scale-[1.01] active:scale-[0.99]">
                         Save Article
                     </button>
-                    <button type="button" id="cancelFormBtn" class="w-full px-6 py-3 bg-gray-600 text-white font-bold rounded-xl hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors">
+                    <button type="button" id="cancelFormBtn" class="w-full sm:w-auto bg-slate-800 hover:bg-slate-700 text-slate-300 px-6 py-3 rounded-xl border border-slate-700 transition-colors">
                         Cancel
                     </button>
                 </div>
             </form>
         </div>
-        
-        <!-- News Grid -->
+
+        <!-- News Cards Grid Board -->
         <div id="newsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <!-- News articles will be dynamically injected here by JavaScript -->
+            <!-- News Cards injected by JS -->
         </div>
 
-        <!-- No News Message -->
-        <div id="noNewsMessage" class="hidden text-center mt-16 text-gray-500 text-lg">
-            No articles found. Add some news using the button above!
+        <!-- No search results placeholder fallback state -->
+        <div id="noResultsState" class="hidden text-center py-20 bg-slate-900/20 border border-slate-800 rounded-3xl p-10">
+            <div class="text-4xl mb-4">📭</div>
+            <h3 class="text-lg font-bold text-white mb-1">No articles found</h3>
+            <p class="text-slate-400 text-sm max-w-md mx-auto">Adjust your keywords search or category filters, or add a brand new article to get started.</p>
         </div>
-    </div>
 
-    <!-- Modal for Expanded View -->
-    <div id="modal" class="fixed inset-0 bg-gray-900 bg-opacity-80 flex items-center justify-center p-4 hidden">
-        <div class="bg-gray-800 rounded-2xl p-8 max-w-2xl w-full relative shadow-xl">
-            <button id="closeModal" class="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
-            <h3 id="modalTitle" class="text-2xl font-bold text-white mb-4"></h3>
-            <div id="modalContent" class="text-gray-300 overflow-y-auto max-h-[70vh]"></div>
-        </div>
-    </div>
+    </main>
 
-    <!-- Modal for Import -->
-    <div id="importModal" class="fixed inset-0 bg-gray-900 bg-opacity-80 flex items-center justify-center p-4 hidden">
-        <div class="bg-gray-800 rounded-2xl p-8 max-w-2xl w-full relative shadow-xl">
-            <h3 class="text-2xl font-bold text-white mb-4">Import Articles</h3>
-            <p class="text-gray-400 mb-4">Paste the content from your exported .txt file below.</p>
-            <textarea id="importData" rows="10" class="w-full mt-1 p-2 bg-gray-700 border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="---
-Title: Example Title
-Date: September 2, 2025
-Tag: Finance
-Summary: This is an example summary.
-Source URL: https://example.com
----
-..."></textarea>
-            <div class="flex space-x-4 mt-4">
-                <button id="confirmImportBtn" class="w-full px-6 py-3 bg-teal-600 text-white font-bold rounded-xl hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-colors">
-                    Import
+    <!-- Modal 1: Article In-Depth Detail -->
+    <div id="detailModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-2xl rounded-2xl shadow-2xl max-h-[90vh] flex flex-col overflow-hidden animate-modal">
+            <!-- Header bar inside modal -->
+            <div class="p-6 border-b border-slate-800 flex items-center justify-between bg-slate-950/40">
+                <span id="modalTag" class="text-[10px] font-bold tracking-wider uppercase px-2.5 py-1 rounded-md"></span>
+                <button class="modal-close-btn text-slate-400 hover:text-white text-lg transition-colors">✕</button>
+            </div>
+            <!-- Body area -->
+            <div class="p-6 space-y-5 overflow-y-auto flex-grow">
+                <div>
+                    <h2 id="modalTitle" class="text-2xl font-bold text-white mb-3"></h2>
+                    <p id="modalSummary" class="text-slate-300 leading-relaxed text-sm bg-slate-950/50 p-4 rounded-xl border border-slate-850"></p>
+                </div>
+                <div>
+                    <h3 class="text-xs font-semibold text-slate-400 mb-3 uppercase tracking-wider">Analysis Highlights</h3>
+                    <ul id="modalPoints" class="space-y-2 text-sm text-slate-300 pl-1">
+                        <!-- Points populated by script -->
+                    </ul>
+                </div>
+                <div id="modalUrlContainer" class="hidden flex items-center gap-2 pt-2 text-xs text-indigo-400 hover:text-indigo-300 font-semibold">
+                    <span>🔗</span>
+                    <a id="modalUrl" href="#" target="_blank" class="hover:underline">View original reference document</a>
+                </div>
+            </div>
+            <!-- Action Footer -->
+            <div class="p-6 bg-slate-950/40 border-t border-slate-800 flex flex-col sm:flex-row gap-3 justify-between items-center">
+                <button id="downloadPdfBtn" class="w-full sm:w-auto flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all">
+                    <span>📥</span> Download PDF Brief
                 </button>
-                <button id="cancelImportBtn" class="w-full px-6 py-3 bg-gray-600 text-white font-bold rounded-xl hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 transition-colors">
-                    Cancel
+                <button class="modal-close-btn w-full sm:w-auto bg-indigo-600 hover:bg-indigo-500 text-white px-6 py-2.5 rounded-xl font-bold text-sm transition-all">
+                    Done Reading
                 </button>
             </div>
         </div>
     </div>
 
-     <!-- Modal for Market Analysis -->
-    <div id="analysisModal" class="fixed inset-0 bg-gray-900 bg-opacity-80 flex items-center justify-center p-4 hidden">
-        <div class="bg-gray-800 rounded-2xl p-8 max-w-3xl w-full relative shadow-xl">
-            <button id="closeAnalysisModal" class="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
-            <h3 class="text-2xl font-bold text-white mb-4">Market Impact Analysis</h3>
-            <div id="analysisResult" class="text-gray-300 overflow-y-auto max-h-[70vh]">
-                <!-- Analysis results will be dynamically injected here -->
+    <!-- Modal 2: Strategic Market Analysis Generation -->
+    <div id="impactModal" class="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 w-full max-w-3xl rounded-3xl shadow-2xl max-h-[85vh] flex flex-col overflow-hidden animate-modal">
+            <!-- Header bar inside modal -->
+            <div class="p-6 border-b border-slate-850 flex items-center justify-between bg-slate-950/60">
+                <div class="flex items-center gap-3">
+                    <div class="text-2xl">✨</div>
+                    <div>
+                        <h2 class="text-lg font-bold text-white">Daily Macro Market Analysis</h2>
+                        <p class="text-xs text-slate-400">Generative Business impact & strategist recommendations</p>
+                    </div>
+                </div>
+                <button id="closeImpactBtn" class="text-slate-400 hover:text-white text-lg transition-colors">✕</button>
+            </div>
+            <!-- Body scroll area -->
+            <div id="impactContent" class="p-8 space-y-6 overflow-y-auto flex-grow text-slate-300 text-sm leading-relaxed">
+                <!-- Injected Markdown summary rendering dynamically -->
+            </div>
+            <!-- Footer -->
+            <div class="p-6 bg-slate-950/60 border-t border-slate-850 flex items-center justify-end">
+                <button id="dismissImpactBtn" class="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-3 rounded-xl font-bold text-sm transition-colors shadow-lg">
+                    Acknowledge Assessment
+                </button>
             </div>
         </div>
     </div>
 
 
     <script>
-        // ============================================================
-        // ENHANCED IMAGE PREPROCESSING & OCR SUPPORT
-        // ============================================================
-        
-        // Image preprocessing utility for better OCR/Vision results
-        const ImagePreprocessor = {
-            /**
-             * Enhance image quality for better OCR recognition
-             * Increases contrast and sharpness
-             */
-            async enhanceImage(file) {
-                return new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        const img = new Image();
-                        img.onload = () => {
-                            const canvas = document.createElement('canvas');
-                            const ctx = canvas.getContext('2d');
-                            canvas.width = img.width;
-                            canvas.height = img.height;
-                            
-                            // Draw original image
-                            ctx.drawImage(img, 0, 0);
-                            
-                            // Get image data
-                            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                            const data = imageData.data;
-                            
-                            // Apply contrast enhancement and grayscale conversion
-                            for (let i = 0; i < data.length; i += 4) {
-                                const r = data[i];
-                                const g = data[i + 1];
-                                const b = data[i + 2];
-                                
-                                // Convert to grayscale
-                                const gray = 0.299 * r + 0.587 * g + 0.114 * b;
-                                
-                                // Increase contrast
-                                const contrastFactor = 1.3;
-                                const contrast = (gray - 128) * contrastFactor + 128;
-                                const enhanced = Math.min(255, Math.max(0, contrast));
-                                
-                                data[i] = enhanced;
-                                data[i + 1] = enhanced;
-                                data[i + 2] = enhanced;
-                            }
-                            
-                            ctx.putImageData(imageData, 0, 0);
-                            
-                            // Convert to base64 data URL
-                            canvas.toBlob((blob) => {
-                                const reader2 = new FileReader();
-                                reader2.onload = (e2) => {
-                                    resolve(e2.target.result.split(',')[1]); // Return base64 without data URL prefix
-                                };
-                                reader2.readAsDataURL(blob);
-                            }, 'image/jpeg', 0.95);
-                        };
-                        img.onerror = reject;
-                        img.src = e.target.result;
-                    };
-                    reader.onerror = reject;
-                    reader.readAsDataURL(file);
-                });
-            }
-        };
-
-        // Use a self-executing anonymous function to avoid polluting the global scope
         (function() {
-            const newsGrid = document.getElementById('newsGrid');
-            const showAddFormBtn = document.getElementById('showAddFormBtn');
-            const addFormContainer = document.getElementById('addFormContainer');
-            const addNewsForm = document.getElementById('addNewsForm');
-            const newsTitleInput = document.getElementById('newsTitle');
-            const newsSummaryInput = document.getElementById('newsSummary');
-            const newsFullDescriptionInput = document.getElementById('newsFullDescription');
-            const newsUrlInput = document.getElementById('sourceUrl');
-            const noNewsMessage = document.getElementById('noNewsMessage');
-            const messageBox = document.getElementById('message-box');
-            const modal = document.getElementById('modal');
-            const closeModalBtn = document.getElementById('closeModal');
-            const modalTitle = document.getElementById('modalTitle');
-            const modalContent = document.getElementById('modalContent');
-            const tagFilter = document.getElementById('tagFilter');
-            const newsTagInput = document.getElementById('newsTag');
-            const searchInput = document.getElementById('searchInput');
-            const imageUpload = document.getElementById('imageUpload');
-            const analyzeImageBtn = document.getElementById('analyzeImageBtn');
-            const loadingIndicator = document.getElementById('loadingIndicator');
-            const loadingText = document.getElementById('loadingText');
-            const formTitle = document.getElementById('formTitle');
-            const cancelFormBtn = document.getElementById('cancelFormBtn');
-            const dropArea = document.getElementById('drop-area');
-            const generateHeadlineBtn = document.getElementById('generateHeadlineBtn');
-            const selectAllBtn = document.getElementById('selectAllBtn');
-            const exportBtn = document.getElementById('exportBtn');
-            const importBtn = document.getElementById('importBtn');
-            const importModal = document.getElementById('importModal');
-            const cancelImportBtn = document.getElementById('cancelImportBtn');
-            const confirmImportBtn = document.getElementById('confirmImportBtn');
-            const importDataTextarea = document.getElementById('importData');
-            const analyzeImpactBtn = document.getElementById('analyzeImpactBtn');
-            const analysisModal = document.getElementById('analysisModal');
-            const closeAnalysisModalBtn = document.getElementById('closeAnalysisModal');
-            const analysisResult = document.getElementById('analysisResult');
-
-            let editingIndex = -1;
-            let isSelectAll = false;
-
-            const { jsPDF } = window.jspdf;
-
-            const availableTags = ["AI", "Entertainment", "Finance", "Industrial", "Pharma", "Real Estate", "Retail", "Technological Services", "Telecommunications"].sort();
-            const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=";
-            const apiKey = "";
-
-            const initialNews = [
-                {
-                    title: "Research and Investigational Drugs (RAID) Designation",
-                    url: "RAID.pdf",
-                    summary: "A document outlining the Saudi Food & Drug Authority's (SFDA) new RAID designation program, aimed at accelerating the development and review of investigational drugs.",
-                    fullDescription: `
-                        <ul class="list-disc list-inside space-y-2">
-                            <li><strong>Purpose:</strong> The RAID designation program is part of the SFDA's initiative to encourage Research and Development (R&D) in Saudi Arabia's pharmaceutical sector.</li>
-                            <li><strong>Incentives:</strong> The program offers several benefits, including a dedicated SFDA contact point, pre-designation meetings for scientific and regulatory guidance.</li>
-                            <li><strong>Eligibility:</strong> To be eligible, a product must be an investigational drug not yet authorized globally, be innovative, and have a clinical trial commitment.</li>
-                            <li><strong>Process:</strong> The document details the application process, from initial submission via email to the final decision from the SFDA within a specified timeframe.</li>
-                        </ul>
-                    `,
-                    date: "September 18, 2025",
-                    tag: 'Pharma'
-                },
-                {
-                    title: "Cenomi Retail Announces 49.95% Share Sale to Al Futtaim Group for 2.5 Billion Riyals",
-                    url: "",
-                    summary: "Cenomi Retail received a notice from a major shareholder regarding the sale of a significant stake, valued at 2.5 billion riyals, to the Al Futtaim Group.",
-                    fullDescription: `
-                        <ul class="list-disc list-inside space-y-2">
-                            <li><strong>Transaction Details:</strong> A major shareholder in Cenomi Retail, Fawaz Abdulaziz Alhokair & Co., is selling 49.95% of his shares.</li>
-                            <li><strong>Valuation:</strong> The stake is valued at 44 riyals per share, totaling 2.5 billion riyals.</li>
-                            <li><strong>Acquirer:</strong> The shares are being acquired by the Al Futtaim Group, a prominent regional company.</li>
-                        </ul>
-                    `,
-                    date: "September 16, 2025",
-                    tag: 'Retail'
-                },
-                {
-                    title: "Unifusion BSC Offers Medical Device & Cosmetics Registration Services",
-                    url: "",
-                    summary: "Unifusion BSC is a trusted authorized representative in Saudi Arabia that helps medical device companies navigate the complexity of SFDA registration.",
-                    fullDescription: `
-                        <ul class="list-disc list-inside space-y-2">
-                            <li><strong>Services:</strong> The company provides business consulting and services for medical devices and cosmetics.</li>
-                            <li><strong>Specialization:</strong> Unifusion BSC specializes in SFDA registration to ensure successful market entry for its clients.</li>
-                            <li><strong>Location:</strong> The business is based in Riyadh, Saudi Arabia.</li>
-                        </ul>
-                    `,
-                    date: "September 16, 2025",
-                    tag: 'Pharma'
-                },
+            // Define standard tag options
+            const tagOptions = [
+                { value: "AI", label: "Artificial Intelligence", colorClass: "text-blue-400 bg-blue-400/10 border-blue-400/20" },
+                { value: "Crypto", label: "Cryptocurrency & Web3", colorClass: "text-emerald-400 bg-emerald-400/10 border-emerald-400/20" },
+                { value: "Tech", label: "Technology & Software", colorClass: "text-purple-400 bg-purple-400/10 border-purple-400/20" },
+                { value: "Economy", label: "Economy & Macro", colorClass: "text-amber-400 bg-amber-400/10 border-amber-400/20" },
+                { value: "Strategic", label: "Strategic Business Brief", colorClass: "text-rose-400 bg-rose-400/10 border-rose-400/20" }
             ];
 
-            // Function to proper indexing after filtering and searching articles
-            function getDisplayArticles() {
-                const selectedTag = tagFilter.value;
-                const filterText = searchInput.value.toLowerCase();
-                let articles = loadNews();
-                articles.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-                if (selectedTag !== 'All') {
-                    articles = articles.filter(article => article.tag === selectedTag);
-                }
-                if (filterText) {
-                    articles = articles.filter(article =>
-                        article.title.toLowerCase().includes(filterText) ||
-                        article.summary.toLowerCase().includes(filterText)
-                    );
-                }
-                return articles;
-            }
-            
-            // Function to strip HTML tags from a string
-            function stripHtml(html) {
-                const doc = new DOMParser().parseFromString(html, 'text/html');
-                return doc.body.textContent || "";
-            }
-
-            // Show a temporary message to the user
-            function showMessage(message, type = 'success') {
-                messageBox.textContent = message;
-                messageBox.classList.remove('hidden', 'bg-red-500', 'bg-green-500');
-                if (type === 'success') {
-                    messageBox.classList.add('bg-green-500');
-                } else {
-                    messageBox.classList.add('bg-red-500');
-                }
-                setTimeout(() => {
-                    messageBox.classList.add('hidden');
-                }, 3000);
-            }
-
-            // Function to save news to localStorage
-            function saveNews(news) {
-                localStorage.setItem('newsData', JSON.stringify(news));
-            }
-
-            // Function to load news from localStorage
-            function loadNews() {
-                const newsString = localStorage.getItem('newsData');
-                if (newsString) {
-                    return JSON.parse(newsString);
-                } else {
-                    saveNews(initialNews);
-                    return initialNews;
-                }
-            }
-
-            // Function to handle TXT export
-            function handleExport() {
-                const selectedArticles = document.querySelectorAll('.news-card input[type="checkbox"]:checked');
-                if (selectedArticles.length === 0) {
-                    showMessage("Please select at least one article to export.", "error");
-                    return;
-                }
-
-                const articlesToExport = Array.from(selectedArticles).map(checkbox => {
-                    const card = checkbox.closest('.news-card');
-                    const index = parseInt(card.dataset.index, 10);
-                    const allNews = loadNews();
-                    const originalArticle = allNews.find(a => a.title === card.querySelector('h3').textContent.trim());
-                    return originalArticle || allNews[index];
-                });
-
-                let exportContent = `Banafa's Daily Brief - Exported Articles\n\n`;
-                articlesToExport.forEach(article => {
-                    exportContent += `---
-Title: ${article.title}
-Date: ${article.date}
-Tag: ${article.tag}
-Summary: ${article.summary}
-${article.url ? `Source URL: ${article.url}\n` : ''}
-\n`;
-                });
-
-                const blob = new Blob([exportContent], { type: 'text/plain;charset=utf-8' });
-                const a = document.createElement('a');
-                a.href = URL.createObjectURL(blob);
-                a.download = 'daily-brief.txt';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-
-                showMessage(`Successfully exported ${selectedArticles.length} article(s)!`);
-            }
-
-            // Function to handle bulk import
-            function handleImport(importText) {
-                if (!importText.trim()) {
-                    showMessage("Import field is empty.", "error");
-                    return;
-                }
-
-                const articleBlocks = importText.split('---').filter(block => block.trim() !== "");
-                if (articleBlocks.length === 0) {
-                    showMessage("No valid articles found in the provided text.", "error");
-                    return;
-                }
-                
-                const newArticles = [];
-                let malformedCount = 0;
-
-                articleBlocks.forEach(block => {
-                    const article = { fullDescription: '' };
-                    const lines = block.trim().split('\n');
-                    lines.forEach(line => {
-                        if (line.startsWith("Title: ")) article.title = line.substring(7);
-                        else if (line.startsWith("Date: ")) article.date = line.substring(6);
-                        else if (line.startsWith("Tag: ")) article.tag = line.substring(5);
-                        else if (line.startsWith("Summary: ")) article.summary = line.substring(9);
-                        else if (line.startsWith("Source URL: ")) article.url = line.substring(12);
-                    });
-
-                    if (article.title && article.summary && article.date && article.tag) {
-                        newArticles.push(article);
-                    } else {
-                        malformedCount++;
-                    }
-                });
-                
-                if (newArticles.length > 0) {
-                    const existingArticles = loadNews();
-                    const updatedArticles = [...newArticles, ...existingArticles];
-                    saveNews(updatedArticles);
-                    renderNews();
-                    showMessage(`${newArticles.length} articles imported successfully!`, 'success');
-                }
-
-                if (malformedCount > 0) {
-                    showMessage(`${malformedCount} articles had an invalid format and were skipped.`, 'error');
-                }
-
-                importModal.classList.add('hidden');
-                importDataTextarea.value = '';
-            }
-
-
-            // Function to render news articles
-            function renderNews() {
-                const articles = getDisplayArticles();
-                const selectedTag = tagFilter.value;
-                const filterText = searchInput.value.toLowerCase();
-                let newsArticles = loadNews();
-                
-                newsArticles.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-                let filteredNews = newsArticles;
-
-                if (selectedTag !== 'All') {
-                    filteredNews = newsArticles.filter(article => article.tag === selectedTag);
-                }
-
-                if (filterText) {
-                    filteredNews = filteredNews.filter(article =>
-                        article.title.toLowerCase().includes(filterText) ||
-                        article.summary.toLowerCase().includes(filterText)
-                    );
-                }
-                
-                newsGrid.innerHTML = '';
-                if (filteredNews.length === 0) {
-                    noNewsMessage.classList.remove('hidden');
-                } else {
-                    noNewsMessage.classList.add('hidden');
-                    filteredNews.forEach((article, index) => {
-                        const card = document.createElement('div');
-                        card.className = 'news-card bg-gray-800 p-6 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 flex flex-col justify-between';
-                        card.setAttribute('data-index', index);
-                        
-                        const content = `
-                            <div class="flex items-start justify-between">
-                                <div class="flex-1">
-                                    <h3 class="text-xl font-bold text-white mb-2">${article.title}</h3>
-                                </div>
-                                <div class="ml-4 flex items-center space-x-2">
-                                    <input type="checkbox" class="h-5 w-5 rounded text-indigo-600 focus:ring-indigo-500 bg-gray-700 border-gray-600">
-                                    <button draggable="true" class="drag-handle cursor-move text-gray-500 hover:text-white transition-colors">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-6 h-6">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-                                        </svg>
-                                    </button>
-                                </div>
-                            </div>
-                            <span class="text-xs px-2 py-1 bg-indigo-500 text-white rounded-full font-medium">${article.tag}</span>
-                            <p class="text-sm text-gray-400 my-4">${article.summary}</p>
-                            <div class="mt-4 flex items-center justify-between">
-                                <button class="read-more-btn text-blue-400 hover:text-blue-300 font-medium transition-colors" data-index="${index}">
-                                    Read more &rarr;
-                                </button>
-                                ${article.url ? `<a href="${article.url}" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-gray-300 transition-colors text-sm font-medium">View Source</a>` : ''}
-                                <span class="text-xs text-gray-500">${article.date}</span>
-                            </div>
-                            <div class="mt-4 flex space-x-2 items-center justify-end">
-                                <button class="share-btn text-gray-400 hover:text-white transition-colors" data-index="${index}">
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186A4.486 4.486 0 0112 11.25c4.148 0 7.5 3.24 7.5 7.5s-3.352 7.5-7.5 7.5S4.5 22.148 4.5 18.75m0-5.25C4.5 8.25 7.5 5.25 12 5.25c4.148 0 7.5 3.24 7.5 7.5s-3.352 7.5-7.5 7.5" />
-                                    </svg>
-                                </button>
-                                <button class="edit-btn text-sm text-green-400 hover:text-green-300 font-medium transition-colors" data-index="${index}">Edit</button>
-                                <button class="delete-btn text-sm text-red-400 hover:text-red-300 font-medium transition-colors" data-index="${index}">Delete</button>
-                            </div>
-                        `;
-                        card.innerHTML = content;
-                        newsGrid.appendChild(card);
-                    });
-                }
-            }
-            
-            // ============================================================
-            // ENHANCED FILE HANDLER WITH BETTER IMAGE OCR SUPPORT
-            // ============================================================
-            const handleFile = async (file) => {
-                if (!file) {
-                    showMessage('Please select an image or PDF file.', 'error');
-                    return;
-                }
-                
-                const fileType = file.type;
-                let prompt;
-                let base64Data;
-
-                // Determine if it's an image or PDF and create appropriate prompt
-                if (fileType.startsWith('image/')) {
-                    // ENHANCED: Preprocess image for better OCR
-                    loadingText.textContent = "Preprocessing image for analysis...";
-                    loadingIndicator.classList.remove('hidden');
-                    analyzeImageBtn.disabled = true;
-
-                    try {
-                        base64Data = await ImagePreprocessor.enhanceImage(file);
-                    } catch (error) {
-                        console.error('Error preprocessing image:', error);
-                        showMessage('Failed to preprocess image. Please try again.', 'error');
-                        loadingIndicator.classList.add('hidden');
-                        analyzeImageBtn.disabled = false;
-                        return;
-                    }
-
-                    loadingText.textContent = "Analyzing document content...";
-
-                    prompt = `You are an expert news analyst. Analyze the screenshot of a news article image carefully.
-
-IMPORTANT: This image may be a screenshot of a news article, document, or text content. Use your best vision capabilities to read and understand the content.
-
-Extract the following information as a JSON object:
-1. "title" (string): The main headline or title of the article/document. Extract exactly as shown.
-2. "summary" (string): A brief, 1-2 sentence summary of the news or content.
-3. "fullDescription" (string): An extensive description of the news in bullet points. For each point, start with a bolded keyword (using **keyword** format) followed by the description.
-4. "tag" (string): A single tag from the following list: ${availableTags.join(', ')}. Choose the most relevant tag based on the content.
-
-If you cannot read certain parts clearly, do your best to infer from context. Focus on extracting meaningful information even if the image quality is not perfect.
-
-Respond with ONLY the JSON object, no additional text.`;
-
-                } else if (fileType === 'application/pdf') {
-                    prompt = `You are an expert news analyst. Analyze the PDF document carefully.
-
-Extract the following information as a JSON object:
-1. "title" (string): The main headline or title of the document.
-2. "summary" (string): A brief, 1-2 sentence summary of the news or content.
-3. "fullDescription" (string): An extensive description in bullet points. For each point, start with a bolded keyword (using **keyword** format) followed by the description.
-4. "tag" (string): A single tag from the following list: ${availableTags.join(', ')}. Choose the most relevant tag.
-
-Respond with ONLY the JSON object, no additional text.`;
-
-                    // For PDF, use the original file
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        base64Data = e.target.result.split(',')[1];
-                    };
-                    reader.readAsDataURL(file);
-
-                    // Wait for reader to complete
-                    await new Promise(resolve => {
-                        reader.onload = (e) => {
-                            base64Data = e.target.result.split(',')[1];
-                            resolve();
-                        };
-                    });
-
-                } else {
-                    showMessage('Unsupported file type. Please upload an image or PDF.', 'error');
-                    return;
-                }
-
-                loadingIndicator.classList.remove('hidden');
-                analyzeImageBtn.disabled = true;
-                loadingText.textContent = "Analyzing document content...";
-
-                // Prepare the payload for Gemini API
-                const payload = {
-                    contents: [{
-                        parts: [
-                            { text: prompt },
-                            {
-                                inlineData: {
-                                    mimeType: fileType,
-                                    data: base64Data
-                                }
-                            }
-                        ]
-                    }],
-                    generationConfig: {
-                        responseMimeType: "application/json"
-                    }
-                };
-
-                try {
-                    const response = await fetch('/api/generate', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! Status: ${response.status}`);
-                    }
-
-                    const result = await response.json();
-                    const jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
-                    
-                    if (!jsonText) {
-                       throw new Error('No structured data extracted from document.');
-                    }
-                    
-                    const data = JSON.parse(jsonText);
-
-                    newsTitleInput.value = data.title || '';
-                    newsSummaryInput.value = data.summary || '';
-                    newsFullDescriptionInput.value = data.fullDescription || '';
-                    newsTagInput.value = data.tag || availableTags[0];
-                    newsUrlInput.value = "";
-
-                    showMessage('Article details extracted successfully! 🎉');
-
-                } catch (error) {
-                    console.error('Error analyzing document:', error);
-                    showMessage('Failed to analyze document. Please try again or check your API key.', 'error');
-                } finally {
-                    loadingIndicator.classList.add('hidden');
-                    analyzeImageBtn.disabled = false;
-                    loadingText.textContent = "Analyzing document content...";
-                }
-            };
-
-            // Handle headline generation
-            const handleGenerateHeadline = async () => {
-                const summary = newsSummaryInput.value;
-                if (!summary) {
-                    showMessage('Please provide a summary to generate a headline.', 'error');
-                    return;
-                }
-                
-                generateHeadlineBtn.disabled = true;
-                const originalText = generateHeadlineBtn.textContent;
-                generateHeadlineBtn.textContent = 'Generating...';
-                
-                const prompt = `Based on the following news article summary, suggest a concise and compelling headline. Respond with only the headline text.
-                
-                Article Summary: ${summary}`;
-
-                const payload = {
-                    contents: [{
-                        parts: [{ text: prompt }]
-                    }]
-                };
-
-                try {
-                    const response = await fetch('/api/generate', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                    const result = await response.json();
-                    const headline = result.candidates?.[0]?.content?.parts?.[0]?.text;
-                    
-                    if (headline) {
-                        newsTitleInput.value = headline.trim().replace(/^"|"$/g, '');
-                    } else {
-                        showMessage('Failed to generate a headline.', 'error');
-                    }
-                } catch (error) {
-                    console.error('Error generating headline:', error);
-                    showMessage('Failed to generate a headline. Please try again.', 'error');
-                } finally {
-                    generateHeadlineBtn.disabled = false;
-                    generateHeadlineBtn.textContent = originalText;
-                }
-            };
-
-            // Handle Market Impact Analysis
-            const handleMarketAnalysis = async (articles) => {
-
-                const articlesText = articles.map(a => `Title: ${a.title}\nSummary: ${a.summary}`).join('\n\n---\n\n');
-                
-                const systemPrompt = `You are an expert business analyst and historian. Your task is to analyze a collection of news articles, identify the central theme or event, and provide a comprehensive market analysis with historical context.`;
-
-                const userQuery = `Analyze the provided news articles. What is the main story here? Summarize the situation and then provide a brief 'Historical Context' section that mentions 1-2 similar past events.
-                
-                News Articles:
-                ${articlesText}
-
-                Respond with a JSON object ONLY, with the following structure:
+            // Default mock data seed (always run on clean start so user has mock data)
+            const seedArticles = [
                 {
-                  "mainInsight": "A single-paragraph summary explaining the core theme connecting the selected articles.",
-                  "historicalContext": [
-                    {
-                      "event": "A brief description of a similar historical event.",
-                      "relevance": "A short explanation of why this past event is relevant to the current news."
-                    }
-                  ],
-                  "keyTakeaway": "A single, actionable takeaway or something to watch for in the future based on the analysis."
-                }`;
+                    title: "Gemini 2.5 Pro Sets New Standard in Text-to-WAV and Real-Time Agent Interactions",
+                    summary: "Google's updated Gemini 2.5 Pro architecture dramatically improves latency benchmarks and showcases seamless, built-in multi-speaker audio generation.",
+                    fullDescription: "- Real-time response latencies drops to sub-200ms levels.\n- Enhanced native output support for lossless WAV/PCM audio rendering.\n- Seamless multi-turn dialogues with customized emotive tone control.\n- Provides multi-agent synchronization and deep visual logic recognition.",
+                    tag: "AI",
+                    url: "https://deepmind.google/technologies/gemini/"
+                },
+                {
+                    title: "Regulatory Shifts and Institutional Inflows Spark Record Volatility in Ethereum Markets",
+                    summary: "Global investment funds increase overall Ethereum spot product allocations following clearer guidance, driving spot trading volumes to multi-month highs.",
+                    fullDescription: "- Clear compliance mandates encourage standard custodial solutions.\n- Decentralized staking nodes demonstrate balanced transaction network weights.\n- Institutional volumes rise by 38% month-over-month.\n- Market makers adjust options premiums pricing due to elevated short-term volatility.",
+                    tag: "Crypto",
+                    url: "https://ethereum.org/"
+                },
+                {
+                    title: "Decentralized Semiconductor Consortium Formed to Bypass Advanced Lithography Constraints",
+                    summary: "A global open alliance collaborates on open-chip architectures and chiplet packaging strategies, optimizing performance without depending on ultra-high-end lithography systems.",
+                    fullDescription: "- Standardized 3D packaging interfaces unify design structures across disparate silicon fabricators.\n- Low-power open-source RISC-V processors provide dynamic scalability.\n- Dramatically reduces initial custom fab tape-out costs for cloud micro-operators.\n- Establishes micro-foundries capable of prototyping logic chips with rapid iteration.",
+                    tag: "Tech",
+                    url: ""
+                }
+            ];
+
+            // Key DOM nodes
+            const tagFilter = document.getElementById("tagFilter");
+            const searchInput = document.getElementById("searchInput");
+            const analyzeImpactBtn = document.getElementById("analyzeImpactBtn");
+            const showAddFormBtn = document.getElementById("showAddFormBtn");
+            const addFormContainer = document.getElementById("addFormContainer");
+            const formTitle = document.getElementById("formTitle");
+            const closeFormBtn = document.getElementById("closeFormBtn");
+            const cancelFormBtn = document.getElementById("cancelFormBtn");
+            
+            const dropArea = document.getElementById("drop-area");
+            const imageUpload = document.getElementById("imageUpload");
+            const previewContainer = document.getElementById("previewContainer");
+            const fileNameDisplay = document.getElementById("fileNameDisplay");
+            const fileSizeDisplay = document.getElementById("fileSizeDisplay");
+            const analyzeImageBtn = document.getElementById("analyzeImageBtn");
+            const clearFileBtn = document.getElementById("clearFileBtn");
+            const loadingIndicator = document.getElementById("loadingIndicator");
+
+            const addNewsForm = document.getElementById("addNewsForm");
+            const newsTitleInput = document.getElementById("newsTitle");
+            const newsSummaryInput = document.getElementById("newsSummary");
+            const newsFullDescriptionInput = document.getElementById("newsFullDescription");
+            const newsTagInput = document.getElementById("newsTag");
+            const newsUrlInput = document.getElementById("newsUrl");
+
+            const newsGrid = document.getElementById("newsGrid");
+            const noResultsState = document.getElementById("noResultsState");
+
+            const detailModal = document.getElementById("detailModal");
+            const modalTag = document.getElementById("modalTag");
+            const modalTitle = document.getElementById("modalTitle");
+            const modalSummary = document.getElementById("modalSummary");
+            const modalPoints = document.getElementById("modalPoints");
+            const modalUrlContainer = document.getElementById("modalUrlContainer");
+            const modalUrl = document.getElementById("modalUrl");
+            const downloadPdfBtn = document.getElementById("downloadPdfBtn");
+
+            const impactModal = document.getElementById("impactModal");
+            const impactContent = document.getElementById("impactContent");
+            const closeImpactBtn = document.getElementById("closeImpactBtn");
+            const dismissImpactBtn = document.getElementById("dismissImpactBtn");
+
+            const apiKeyInput = document.getElementById("apiKeyInput");
+            const saveKeyBtn = document.getElementById("saveKeyBtn");
+            const apiKeyAlert = document.getElementById("apiKeyAlert");
+
+            let activeFile = null;
+            let editingIndex = null;
+            let currentOpenArticle = null;
+
+            // Initialize State and Keys
+            function getApiKey() {
+                return localStorage.getItem("gemini_api_key") || "";
+            }
+
+            function initApiKeyUi() {
+                const savedKey = getApiKey();
+                if (savedKey) {
+                    apiKeyInput.value = savedKey;
+                    apiKeyAlert.classList.add("hidden");
+                } else {
+                    apiKeyInput.value = "";
+                    apiKeyAlert.classList.remove("hidden");
+                }
+            }
+
+            saveKeyBtn.onclick = () => {
+                const val = apiKeyInput.value.trim();
+                localStorage.setItem("gemini_api_key", val);
+                initApiKeyUi();
+                showToast("API Key updated!", "success");
+            };
+
+            // Setup Form categories dropdown and Filters options
+            function buildDropdowns() {
+                tagFilter.innerHTML = '<option value="ALL">All Categories</option>';
+                newsTagInput.innerHTML = '<option value="" disabled selected>Choose category...</option>';
                 
-                const payload = {
-                    contents: [{ parts: [{ text: userQuery }] }],
-                    systemInstruction: { parts: [{ text: systemPrompt }] },
-                    generationConfig: { responseMimeType: "application/json" }
-                };
+                tagOptions.forEach(opt => {
+                    // Populate main filter dropdown
+                    const filterOpt = document.createElement("option");
+                    filterOpt.value = opt.value;
+                    filterOpt.textContent = opt.label;
+                    tagFilter.appendChild(filterOpt);
 
-                try {
-                    const response = await fetch('/api/generate', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                    if (!response.ok) {
-                        const errorBody = await response.text();
-                        throw new Error(`HTTP error! status: ${response.status}, body: ${errorBody}`);
-                    }
-                    
-                    const result = await response.json();
-                    const jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
-                    if (!jsonText) throw new Error('No analysis data returned from AI. The response might be empty.');
-
-                    const data = JSON.parse(jsonText);
-                    renderAnalysisResults(data);
-
-                } catch (error) {
-                    console.error('Error during market analysis:', error);
-                    analysisResult.innerHTML = `<p class="text-red-400">An error occurred during analysis. Please ensure your API key is valid and try again.</p>`;
-                }
-            };
-            
-            // Render Market Analysis Results
-            const renderAnalysisResults = (data) => {
-                if (!data) {
-                    analysisResult.innerHTML = `<p class="text-red-400">Failed to parse analysis results.</p>`;
-                    return;
-                }
-
-                let html = `<div class="space-y-6">`;
-
-                if (data.mainInsight) {
-                    html += `
-                        <div>
-                            <h4 class="text-lg font-bold text-purple-400 mb-2">Main Insight</h4>
-                            <p class="text-gray-300">${data.mainInsight}</p>
-                        </div>
-                    `;
-                }
-
-                if (data.historicalContext && data.historicalContext.length > 0) {
-                    html += `<div><h4 class="text-lg font-bold text-purple-400 mb-2">Historical Context</h4><div class="space-y-4">`;
-                    data.historicalContext.forEach(context => {
-                        html += `
-                            <div class="bg-gray-700 p-4 rounded-lg">
-                                <p class="font-bold text-white">${context.event}</p>
-                                <p class="text-sm text-gray-400 mt-2">${context.relevance}</p>
-                            </div>
-                        `;
-                    });
-                    html += `</div></div>`;
-                }
-
-                if (data.keyTakeaway) {
-                    html += `
-                        <div>
-                            <h4 class="text-lg font-bold text-purple-400 mb-2">Key Takeaway</h4>
-                            <p class="text-gray-300">${data.keyTakeaway}</p>
-                        </div>
-                    `;
-                }
-
-                html += `</div>`;
-                analysisResult.innerHTML = html;
-            };
-
-            // Handle summary and translation within the modal
-            const handleModalSummarizeTranslate = async (fullDescription) => {
-            
-                const modalButton = document.getElementById('summarizeTranslateModalBtn');
-                const modalTranslateResult = document.getElementById('modalTranslateResult');
-
-                if (!fullDescription) {
-                    modalTranslateResult.textContent = 'No description to summarize and translate.';
-                    return;
-                }
-
-                modalButton.disabled = true;
-                modalButton.textContent = 'Translating...';
-
-                const prompt = `Translate and summarize the following text into a concise, 1-2 sentence summary in Arabic.
-                
-                Text: ${stripHtml(fullDescription)}`;
-
-                const payload = {
-                    contents: [{
-                        parts: [{ text: prompt }]
-                    }]
-                };
-
-                try {
-                    const response = await fetch('/api/generate', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                    const result = await response.json();
-                    const translatedSummary = result.candidates?.[0]?.content?.parts?.[0]?.text;
-                    
-                    if (translatedSummary) {
-                        modalTranslateResult.textContent = translatedSummary.trim();
-                    } else {
-                        modalTranslateResult.textContent = 'Failed to translate and summarize.';
-                    }
-                } catch (error) {
-                    console.error('Error translating:', error);
-                    modalTranslateResult.textContent = 'Failed to translate and summarize.';
-                } finally {
-                    modalButton.disabled = false;
-                    modalButton.textContent = 'Summarize & Translate ✨';
-                }
-            };
-            
-            // Handle select all
-            selectAllBtn.addEventListener('click', () => {
-                const checkboxes = document.querySelectorAll('.news-card input[type="checkbox"]');
-                isSelectAll = !isSelectAll;
-                checkboxes.forEach(checkbox => {
-                    checkbox.checked = isSelectAll;
+                    // Populate form category select
+                    const formOpt = document.createElement("option");
+                    formOpt.value = opt.value;
+                    formOpt.textContent = opt.label;
+                    newsTagInput.appendChild(formOpt);
                 });
-                selectAllBtn.textContent = isSelectAll ? 'Deselect All' : 'Select All';
-            });
-            
-            // Handle TXT export
-            exportBtn.addEventListener('click', handleExport);
+            }
 
-            // Initialize event listeners
-            showAddFormBtn.addEventListener('click', () => {
-                addFormContainer.classList.remove('hidden');
-            });
+            // Article Database (localStorage seeded fallback)
+            function loadNews() {
+                const saved = localStorage.getItem("banafa_news");
+                if (saved) {
+                    try { return JSON.parse(saved); } catch(e) { return seedArticles; }
+                }
+                localStorage.setItem("banafa_news", JSON.stringify(seedArticles));
+                return seedArticles;
+            }
 
-            cancelFormBtn.addEventListener('click', () => {
-                addFormContainer.classList.add('hidden');
-                addNewsForm.reset();
-            });
+            function saveNews(articles) {
+                localStorage.setItem("banafa_news", JSON.stringify(articles));
+            }
 
-            analyzeImageBtn.addEventListener('click', () => {
-                const file = imageUpload.files[0];
-                handleFile(file);
-            });
-
-            addNewsForm.addEventListener('submit', (e) => {
-                e.preventDefault();
+            // Toast Alert Manager
+            function showToast(message, type = "success") {
+                const box = document.getElementById("message-box");
+                box.textContent = message;
+                box.className = "fixed top-6 right-6 z-50 p-4 rounded-xl shadow-2xl transition-all duration-300 max-w-sm border border-opacity-30 font-medium transform translate-y-0";
                 
-                const newArticle = {
-                    title: newsTitleInput.value,
-                    summary: newsSummaryInput.value,
-                    fullDescription: newsFullDescriptionInput.value,
-                    date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
-                    tag: newsTagInput.value,
-                    url: newsUrlInput.value || ""
-                };
+                if (type === "success") {
+                    box.classList.add("bg-emerald-900/95", "text-emerald-300", "border-emerald-500");
+                } else if (type === "error") {
+                    box.classList.add("bg-rose-950/95", "text-rose-300", "border-rose-500");
+                } else {
+                    box.classList.add("bg-slate-900/95", "text-slate-200", "border-slate-500");
+                }
 
-                const articles = loadNews();
-                articles.unshift(newArticle);
-                saveNews(articles);
-                renderNews();
+                box.classList.remove("hidden");
                 
-                addFormContainer.classList.add('hidden');
-                addNewsForm.reset();
-                showMessage('Article added successfully! ✨');
-            });
+                setTimeout(() => {
+                    box.classList.add("hidden");
+                }, 4000);
+            }
 
-            imageUpload.addEventListener('change', () => {
-                const file = imageUpload.files[0];
-                if (file) {
-                    handleFile(file);
+            // Open/Close Add Form UI panel
+            function openAddForm(editIndex = null) {
+                addFormContainer.classList.remove("hidden");
+                addFormContainer.scrollIntoView({ behavior: 'smooth' });
+                clearFormAndUpload();
+
+                if (editIndex !== null) {
+                    editingIndex = editIndex;
+                    const articles = loadNews();
+                    const art = articles[editIndex];
+                    formTitle.textContent = "Edit Strategic Intelligence Article";
+                    
+                    newsTitleInput.value = art.title;
+                    newsSummaryInput.value = art.summary;
+                    newsFullDescriptionInput.value = art.fullDescription;
+                    newsTagInput.value = art.tag;
+                    newsUrlInput.value = art.url || "";
+                } else {
+                    editingIndex = null;
+                    formTitle.textContent = "Add Strategic Intelligence";
+                }
+            }
+
+            function closeAddForm() {
+                addFormContainer.classList.add("hidden");
+                clearFormAndUpload();
+            }
+
+            function clearFormAndUpload() {
+                addNewsForm.reset();
+                activeFile = null;
+                imageUpload.value = "";
+                previewContainer.classList.add("hidden");
+                fileNameDisplay.textContent = "";
+                fileSizeDisplay.textContent = "";
+                editingIndex = null;
+            }
+
+            // Drag/Drop and Paste File Preprocessing logic
+            async function preprocessAndTo64(file) {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.readAsDataURL(file);
+                    reader.onload = () => {
+                        const rawBase = reader.result.split(',')[1];
+                        resolve(rawBase);
+                    };
+                    reader.onerror = err => reject(err);
+                });
+            }
+
+            function updateFilePreview(file) {
+                if (!file) return;
+                activeFile = file;
+                fileNameDisplay.textContent = file.name || "Pasted image from clipboard";
+                
+                const kb = (file.size / 1024).toFixed(1);
+                fileSizeDisplay.textContent = `${file.type || 'image/png'} • ${kb} KB`;
+                
+                previewContainer.classList.remove("hidden");
+                showToast("File attached successfully!", "success");
+            }
+
+            // Clipboard Paste Action Listener
+            window.addEventListener("paste", function(e) {
+                const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+                for (let index in items) {
+                    const item = items[index];
+                    if (item.kind === 'file') {
+                        const file = item.getAsFile();
+                        updateFilePreview(file);
+                        // Open adding article panel automatically to show preview/action
+                        openAddForm();
+                        break;
+                    }
                 }
             });
 
-            // Drag and drop functionality
-            dropArea.addEventListener('dragover', (e) => {
+            // Drag and drop event styling state modifications
+            dropArea.ondragover = (e) => {
                 e.preventDefault();
-                dropArea.classList.add('active');
-            });
+                dropArea.classList.add("drag-active");
+            };
 
-            dropArea.addEventListener('dragleave', () => {
-                dropArea.classList.remove('active');
-            });
+            dropArea.ondragleave = () => {
+                dropArea.classList.remove("drag-active");
+            };
 
-            dropArea.addEventListener('drop', (e) => {
+            dropArea.ondrop = (e) => {
                 e.preventDefault();
-                dropArea.classList.remove('active');
+                dropArea.classList.remove("drag-active");
                 const files = e.dataTransfer.files;
                 if (files.length > 0) {
-                    imageUpload.files = files;
-                    const file = files[0];
-                    handleFile(file);
+                    updateFilePreview(files[0]);
                 }
-            });
+            };
 
-            dropArea.addEventListener('click', () => {
+            dropArea.onclick = () => {
                 imageUpload.click();
-            });
+            };
 
-            generateHeadlineBtn.addEventListener('click', handleGenerateHeadline);
+            imageUpload.onchange = () => {
+                if (imageUpload.files[0]) {
+                    updateFilePreview(imageUpload.files[0]);
+                }
+            };
 
-            // Populate tags in filter and form
-            function populateTags() {
-                tagFilter.innerHTML = '<option value="All">All Tags</option>';
-                availableTags.forEach(tag => {
-                    tagFilter.innerHTML += `<option value="${tag}">${tag}</option>`;
-                    newsTagInput.innerHTML += `<option value="${tag}">${tag}</option>`;
+            clearFileBtn.onclick = () => {
+                activeFile = null;
+                imageUpload.value = "";
+                previewContainer.classList.add("hidden");
+                fileNameDisplay.textContent = "";
+                fileSizeDisplay.textContent = "";
+                showToast("File cleared", "neutral");
+            };
+
+            // Call Gemini Flash to Extract News Details
+            async function processDocumentWithAI() {
+                if (!activeFile) {
+                    showToast("Please drag & drop or select a document first.", "error");
+                    return;
+                }
+
+                const apiKey = getApiKey();
+                if (!apiKey) {
+                    showToast("API Key is missing. Set your key in the header.", "error");
+                    return;
+                }
+
+                loadingIndicator.classList.remove("hidden");
+                analyzeImageBtn.disabled = true;
+
+                try {
+                    const base64Data = await preprocessAndTo64(activeFile);
+                    const promptText = `
+                        You are an expert financial and business intelligence analyst.
+                        Analyze the attached screenshot, article snapshot, or document text.
+                        Parse the article details and return a strictly formed JSON object.
+
+                        Format response structure must match exactly:
+                        {
+                          "title": "A concise professional strategic title of the article",
+                          "summary": "A high-level business brief summary of the event (2-3 sentences max)",
+                          "fullDescription": "Provide detailed findings and implications. This must be structured as bullet points separated by newline characters. Every point MUST start with a dash (-) character.",
+                          "tag": "Choose only one of these matching categories: AI, Crypto, Tech, Economy, Strategic"
+                        }
+                        
+                        Important guidelines:
+                        - Do not write standard conversations before or after. Return only JSON code block.
+                        - Match the tag to the news content correctly.
+                        - Do not include HTML markup inside the JSON text.
+                    `;
+
+                    const targetUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+                    
+                    const response = await fetch(targetUrl, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            contents: [{
+                                parts: [
+                                    { text: promptText },
+                                    { inlineData: { mimeType: activeFile.type || "image/png", data: base64Data } }
+                                ]
+                            }]
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Gemini responded with error: status ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    const aiRawResponse = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+                    
+                    if (!aiRawResponse) {
+                        throw new Error("No readable response content returned from Gemini model.");
+                    }
+
+                    // Clean code block ticks
+                    const jsonString = aiRawResponse.replace(/```json/g, "").replace(/```/g, "").trim();
+                    const cleanData = JSON.parse(jsonString);
+
+                    // Auto-fill extracted inputs
+                    newsTitleInput.value = cleanData.title || "";
+                    newsSummaryInput.value = cleanData.summary || "";
+                    newsFullDescriptionInput.value = cleanData.fullDescription || "";
+                    newsTagInput.value = cleanData.tag || "AI";
+
+                    showToast("Strategic data fields loaded successfully!", "success");
+                    previewContainer.classList.add("hidden");
+                    activeFile = null;
+                    imageUpload.value = "";
+                } catch(err) {
+                    console.error("AI Reader Failure: ", err);
+                    showToast(`Error: ${err.message || "Failed to analyze document."}`, "error");
+                } finally {
+                    loadingIndicator.classList.add("hidden");
+                    analyzeImageBtn.disabled = false;
+                }
+            }
+
+            analyzeImageBtn.onclick = processDocumentWithAI;
+
+            // Form Submit (Save or Update article)
+            addNewsForm.onsubmit = (e) => {
+                e.preventDefault();
+                const articles = loadNews();
+
+                const articleData = {
+                    title: newsTitleInput.value.trim(),
+                    summary: newsSummaryInput.value.trim(),
+                    fullDescription: newsFullDescriptionInput.value.trim(),
+                    tag: newsTagInput.value,
+                    url: newsUrlInput.value.trim()
+                };
+
+                if (editingIndex !== null) {
+                    // Update
+                    articles[editingIndex] = articleData;
+                    showToast("Article updated successfully!");
+                } else {
+                    // Create New
+                    articles.unshift(articleData);
+                    showToast("New article saved to Daily Board!");
+                }
+
+                saveNews(articles);
+                renderNewsGrid();
+                closeAddForm();
+            };
+
+            // Search & Tag Filter application logic
+            function getFilteredNews() {
+                const articles = loadNews();
+                const filterTag = tagFilter.value;
+                const keyword = searchInput.value.toLowerCase().trim();
+
+                return articles.filter(art => {
+                    const tagMatch = (filterTag === "ALL") || (art.tag === filterTag);
+                    const keywordMatch = !keyword || 
+                        art.title.toLowerCase().includes(keyword) || 
+                        art.summary.toLowerCase().includes(keyword) || 
+                        art.fullDescription.toLowerCase().includes(keyword);
+                    return tagMatch && keywordMatch;
                 });
             }
 
-            tagFilter.addEventListener('change', renderNews);
-            searchInput.addEventListener('input', renderNews);
+            // Render dynamic visual cards
+            function renderNewsGrid() {
+                const activeNews = getFilteredNews();
+                newsGrid.innerHTML = "";
 
-            // Initialize the app
-            populateTags();
-            renderNews();
-
-            // Export and Import functionality
-            exportBtn.addEventListener('click', handleExport);
-            importBtn.addEventListener('click', () => {
-                importModal.classList.remove('hidden');
-            });
-            cancelImportBtn.addEventListener('click', () => {
-                importModal.classList.add('hidden');
-                importDataTextarea.value = '';
-            });
-            confirmImportBtn.addEventListener('click', () => {
-                handleImport(importDataTextarea.value);
-            });
-
-            // Close modals
-            closeModalBtn.addEventListener('click', () => {
-                modal.classList.add('hidden');
-            });
-            closeAnalysisModalBtn.addEventListener('click', () => {
-                analysisModal.classList.add('hidden');
-            });
-
-            // Market analysis
-            analyzeImpactBtn.addEventListener('click', () => {
-                const articles = getDisplayArticles();
-                if (articles.length === 0) {
-                    showMessage('Please add or select articles to analyze.', 'error');
+                if (activeNews.length === 0) {
+                    noResultsState.classList.remove("hidden");
                     return;
                 }
-                analysisModal.classList.remove('hidden');
-                handleMarketAnalysis(articles);
-            });
+                noResultsState.classList.add("hidden");
 
-            // Render news on load
-            document.addEventListener('DOMContentLoaded', () => {
-                renderNews();
-            });
+                activeNews.forEach((art, index) => {
+                    const opt = tagOptions.find(o => o.value === art.tag) || tagOptions[0];
+                    const card = document.createElement("div");
+                    card.className = "glass-card p-6 rounded-2xl flex flex-col justify-between h-full relative overflow-hidden group";
 
-            // Event delegation for read more, edit, delete, and share
-            newsGrid.addEventListener('click', (e) => {
-                if (e.target.classList.contains('read-more-btn')) {
-                    const index = e.target.dataset.index;
-                    const articles = getDisplayArticles();
-                    const article = articles[index];
-                    modalTitle.textContent = article.title;
-                    modalContent.innerHTML = `
-                        <p><strong>Tag:</strong> ${article.tag}</p>
-                        <p><strong>Date:</strong> ${article.date}</p>
-                        <p class="mt-4"><strong>Summary:</strong> ${article.summary}</p>
-                        <div class="mt-4"><strong>Full Description:</strong><br>${article.fullDescription}</div>
-                        ${article.url ? `<p class="mt-4"><a href="${article.url}" target="_blank" rel="noopener noreferrer" class="text-blue-400 hover:text-blue-300">View Source</a></p>` : ''}
+                    card.innerHTML = `
+                        <!-- Subtle category tag colored tab -->
+                        <div class="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r ${getGradientForTag(art.tag)}"></div>
+
+                        <div class="space-y-4">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="text-[10px] font-bold tracking-wider uppercase px-2.5 py-1 rounded-md border ${opt.colorClass}">
+                                    ${opt.value}
+                                </span>
+                                <div class="flex gap-1.5 opacity-60 group-hover:opacity-100 transition-opacity">
+                                    <button class="edit-art-btn p-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-xs" title="Edit Article" data-index="${index}">✏️</button>
+                                    <button class="delete-art-btn p-1.5 bg-slate-800 hover:bg-rose-900/60 rounded-lg text-xs" title="Delete Article" data-index="${index}">🗑️</button>
+                                </div>
+                            </div>
+
+                            <div>
+                                <h3 class="font-bold text-lg text-white leading-tight hover:text-indigo-300 transition-colors cursor-pointer read-more-title" data-index="${index}">
+                                    ${escapeHtml(art.title)}
+                                </h3>
+                                <p class="text-xs text-slate-400 mt-2 line-clamp-3 leading-relaxed">
+                                    ${escapeHtml(art.summary)}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="mt-6 pt-4 border-t border-slate-800/60 flex items-center justify-between">
+                            <button class="read-more-btn text-xs font-semibold text-indigo-400 hover:text-indigo-300 transition-colors" data-index="${index}">
+                                Read Details &rarr;
+                            </button>
+                            ${art.url ? `<a href="${art.url}" target="_blank" class="text-[10px] text-slate-500 hover:text-slate-300 hover:underline">Reference</a>` : ''}
+                        </div>
                     `;
-                    modal.classList.remove('hidden');
+                    newsGrid.appendChild(card);
+                });
+
+                // Attach dynamically created card events
+                document.querySelectorAll(".read-more-btn, .read-more-title").forEach(btn => {
+                    btn.onclick = (e) => {
+                        const idx = parseInt(e.target.dataset.index);
+                        openArticleDetails(activeNews[idx]);
+                    };
+                });
+
+                document.querySelectorAll(".edit-art-btn").forEach(btn => {
+                    btn.onclick = (e) => {
+                        e.stopPropagation();
+                        // Find true position of current item
+                        const idx = parseInt(btn.dataset.index);
+                        const allArts = loadNews();
+                        const targetTitle = activeNews[idx].title;
+                        const mainIdx = allArts.findIndex(a => a.title === targetTitle);
+                        if (mainIdx !== -1) openAddForm(mainIdx);
+                    };
+                });
+
+                document.querySelectorAll(".delete-art-btn").forEach(btn => {
+                    btn.onclick = (e) => {
+                        e.stopPropagation();
+                        const idx = parseInt(btn.dataset.index);
+                        const confirmModal = confirm("Are you sure you want to delete this strategic briefing?");
+                        if (confirmModal) {
+                            const allArts = loadNews();
+                            const targetTitle = activeNews[idx].title;
+                            const mainIdx = allArts.findIndex(a => a.title === targetTitle);
+                            if (mainIdx !== -1) {
+                                allArts.splice(mainIdx, 1);
+                                saveNews(allArts);
+                                renderNewsGrid();
+                                showToast("Article deleted.", "neutral");
+                            }
+                        }
+                    };
+                });
+            }
+
+            function getGradientForTag(tag) {
+                switch(tag) {
+                    case "AI": return "from-blue-500 to-indigo-500";
+                    case "Crypto": return "from-emerald-500 to-teal-500";
+                    case "Tech": return "from-purple-500 to-pink-500";
+                    case "Economy": return "from-amber-500 to-orange-500";
+                    default: return "from-rose-500 to-indigo-500";
                 }
-                if (e.target.classList.contains('delete-btn')) {
-                    const index = e.target.dataset.index;
-                    if (confirm('Are you sure you want to delete this article?')) {
-                        const articles = loadNews();
-                        const displayArticles = getDisplayArticles();
-                        const article = displayArticles[index];
-                        const actualIndex = articles.findIndex(a => a.title === article.title);
-                        articles.splice(actualIndex, 1);
-                        saveNews(articles);
-                        renderNews();
-                        showMessage('Article deleted successfully!');
+            }
+
+            // Article Details Modal Handler
+            function openArticleDetails(art) {
+                currentOpenArticle = art;
+                const opt = tagOptions.find(o => o.value === art.tag) || tagOptions[0];
+                
+                modalTag.textContent = opt.value;
+                modalTag.className = `text-[10px] font-bold tracking-wider uppercase px-2.5 py-1 rounded-md border ${opt.colorClass}`;
+                modalTitle.textContent = art.title;
+                modalSummary.textContent = art.summary;
+
+                // Process points
+                modalPoints.innerHTML = "";
+                const rawPoints = art.fullDescription || "";
+                const listItems = rawPoints.split('\n').filter(p => p.trim());
+                
+                if (listItems.length > 0) {
+                    listItems.forEach(pt => {
+                        const cleanPoint = pt.replace(/^-\s*/, '').trim();
+                        if (cleanPoint) {
+                            const li = document.createElement("li");
+                            li.className = "flex items-start gap-2.5";
+                            li.innerHTML = `<span class="text-indigo-500 mt-1">•</span> <span class="leading-relaxed text-slate-300">${escapeHtml(cleanPoint)}</span>`;
+                            modalPoints.appendChild(li);
+                        }
+                    });
+                } else {
+                    modalPoints.innerHTML = `<li class="text-slate-500 italic">No point analyses stored.</li>`;
+                }
+
+                // Reference Link
+                if (art.url) {
+                    modalUrlContainer.classList.remove("hidden");
+                    modalUrl.href = art.url;
+                } else {
+                    modalUrlContainer.classList.add("hidden");
+                }
+
+                detailModal.classList.remove("hidden");
+            }
+
+            function closeArticleDetails() {
+                detailModal.classList.add("hidden");
+                currentOpenArticle = null;
+            }
+
+            // Generate clean PDF from jsPDF
+            function exportBriefToPdf() {
+                if (!currentOpenArticle) return;
+                
+                try {
+                    const { jsPDF } = window.jspdf;
+                    const doc = new jsPDF({
+                        orientation: "portrait",
+                        unit: "mm",
+                        format: "a4"
+                    });
+
+                    // Styling & Metadata configs
+                    const art = currentOpenArticle;
+                    const margin = 20;
+                    const widthLimit = 210 - (margin * 2);
+                    let yOffset = 25;
+
+                    // Document Header
+                    doc.setFont("Helvetica", "bold");
+                    doc.setFontSize(22);
+                    doc.setTextColor(30, 27, 75); // Indigo slate
+                    doc.text("Strategic Intelligence Briefing", margin, yOffset);
+                    yOffset += 8;
+
+                    doc.setFont("Helvetica", "normal");
+                    doc.setFontSize(9);
+                    doc.setTextColor(100, 116, 139);
+                    doc.text(`Generated: ${new Date().toLocaleDateString()}  |  Category: ${art.tag}`, margin, yOffset);
+                    yOffset += 5;
+
+                    // Horizontal Line separator
+                    doc.setDrawColor(226, 232, 240);
+                    doc.setLineWidth(0.5);
+                    doc.line(margin, yOffset, 210 - margin, yOffset);
+                    yOffset += 12;
+
+                    // Article Title
+                    doc.setFont("Helvetica", "bold");
+                    doc.setFontSize(14);
+                    doc.setTextColor(15, 23, 42); // slate 900
+                    const splitTitle = doc.splitTextToSize(art.title, widthLimit);
+                    doc.text(splitTitle, margin, yOffset);
+                    yOffset += (splitTitle.length * 6) + 4;
+
+                    // Executive Summary header section
+                    doc.setFont("Helvetica", "bold");
+                    doc.setFontSize(10);
+                    doc.setTextColor(99, 102, 241); // indigo 500
+                    doc.text("EXECUTIVE BRIEF", margin, yOffset);
+                    yOffset += 6;
+
+                    doc.setFont("Helvetica", "normal");
+                    doc.setFontSize(10);
+                    doc.setTextColor(51, 65, 85); // slate 700
+                    const splitSummary = doc.splitTextToSize(art.summary, widthLimit);
+                    doc.text(splitSummary, margin, yOffset);
+                    yOffset += (splitSummary.length * 5) + 12;
+
+                    // Strategic Findings details header section
+                    doc.setFont("Helvetica", "bold");
+                    doc.setFontSize(10);
+                    doc.setTextColor(99, 102, 241);
+                    doc.text("STRATEGIC OUTLOOK POINTS", margin, yOffset);
+                    yOffset += 8;
+
+                    doc.setFont("Helvetica", "normal");
+                    doc.setFontSize(10);
+                    doc.setTextColor(51, 65, 85);
+
+                    const points = art.fullDescription.split("\n").filter(p => p.trim());
+                    points.forEach(p => {
+                        const cleanP = p.replace(/^-\s*/, '').trim();
+                        if (cleanP) {
+                            const bulletMarker = "• ";
+                            const paragraphText = doc.splitTextToSize(bulletMarker + cleanP, widthLimit - 6);
+                            
+                            // Check vertical overflows
+                            if (yOffset + (paragraphText.length * 5) > 270) {
+                                doc.addPage();
+                                yOffset = 25;
+                            }
+
+                            doc.text(paragraphText, margin + 4, yOffset);
+                            yOffset += (paragraphText.length * 5) + 3;
+                        }
+                    });
+
+                    // Footer notice
+                    doc.setDrawColor(241, 245, 249);
+                    doc.line(margin, 280, 210 - margin, 280);
+                    doc.setFontSize(8);
+                    doc.setTextColor(148, 163, 184);
+                    doc.text("Banafa's Strategic Intelligence Platform • Confidential Business Briefing Document", margin, 285);
+
+                    // Download action trigger
+                    const sanitizedFilename = art.title.toLowerCase().replace(/[^a-z0-9]/g, "_").substring(0, 30);
+                    doc.save(`briefing_${sanitizedFilename}.pdf`);
+                    showToast("PDF exported successfully!");
+                } catch(e) {
+                    console.error("PDF engine failure", e);
+                    showToast("Failed to output PDF report", "error");
+                }
+            }
+
+            // Macro Market Impact Analyzer (Entire Board Analysis Prompt)
+            async function triggerGlobalMarketAnalysis() {
+                const currentArticles = loadNews();
+                if (currentArticles.length === 0) {
+                    showToast("No news briefings found. Please add or import some news first.", "error");
+                    return;
+                }
+
+                const apiKey = getApiKey();
+                if (!apiKey) {
+                    showToast("API Key is missing. Set your key in the header to run calculations.", "error");
+                    return;
+                }
+
+                // Show visual loading placeholder
+                impactModal.classList.remove("hidden");
+                impactContent.innerHTML = `
+                    <div class="flex flex-col items-center justify-center py-16 gap-4">
+                        <svg class="animate-spin h-10 w-10 text-purple-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <p class="text-sm text-purple-300 font-semibold animate-pulse">Running macro market simulations on active briefs...</p>
+                    </div>
+                `;
+
+                try {
+                    const articlesContextText = currentArticles.map((art, i) => {
+                        return `Article #${i+1}:\nCategory: ${art.tag}\nTitle: ${art.title}\nSummary: ${art.summary}\nImplications:\n${art.fullDescription}`;
+                    }).join("\n\n---\n\n");
+
+                    const systemPrompt = `
+                        You are a Lead Financial Economist and Principal Business Strategy Consultant.
+                        Based on the following aggregated daily brief news items, run a high-level strategic evaluation of the global market.
+                        Output an analytical review formatted in clean, professional Markdown with headers, bullet lists, and paragraphs.
+
+                        Sections to cover:
+                        1. **Market Outlook & Trend Synthesis**: Summarize how these news briefs interact to set general market trajectory.
+                        2. **Core Risks & Intersecting Vulnerabilities**: Highlight hidden systemic threats, supply lines, or technology risk areas.
+                        3. **Strategic Recommendations**: Provide 3 distinct, actionable advice takeaways for enterprise board strategists.
+                    `;
+
+                    const targetUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+
+                    const response = await fetch(targetUrl, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            contents: [{
+                                parts: [
+                                    { text: articlesContextText },
+                                    { text: systemPrompt }
+                                ]
+                            }]
+                        })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Gemini responded with status ${response.status}`);
                     }
+
+                    const result = await response.json();
+                    const analysisMarkdownText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                    if (!analysisMarkdownText) {
+                        throw new Error("No analysis received from Gemini AI model.");
+                    }
+
+                    // Simple markdown-to-HTML parser fallback
+                    impactContent.innerHTML = parseMarkdownToHtml(analysisMarkdownText);
+                } catch(err) {
+                    console.error("Impact Simulation Error", err);
+                    impactContent.innerHTML = `
+                        <div class="p-6 bg-rose-950/40 border border-rose-500/20 text-rose-300 rounded-2xl flex flex-col gap-3">
+                            <h3 class="font-bold">Execution Error</h3>
+                            <p class="text-xs leading-relaxed">${escapeHtml(err.message || "Something went wrong during simulation run.")}</p>
+                            <button id="retryImpactBtn" class="bg-rose-800 hover:bg-rose-700 text-white text-xs px-4 py-2 rounded-lg self-start transition-colors">
+                                Retry Analysis
+                            </button>
+                        </div>
+                    `;
+                    document.getElementById("retryImpactBtn").onclick = triggerGlobalMarketAnalysis;
                 }
-                if (e.target.classList.contains('edit-btn')) {
-                    const index = e.target.dataset.index;
-                    const articles = getDisplayArticles();
-                    const article = articles[index];
-                    newsTitleInput.value = article.title;
-                    newsSummaryInput.value = article.summary;
-                    newsFullDescriptionInput.value = article.fullDescription;
-                    newsTagInput.value = article.tag;
-                    newsUrlInput.value = article.url || "";
-                    addFormContainer.classList.remove('hidden');
-                    editingIndex = index;
-                }
+            }
+
+            // Simple fast utility Markdown to HTML parser
+            function parseMarkdownToHtml(md) {
+                let html = md;
+                
+                // Replace bold headings
+                html = html.replace(/^### (.*$)/gim, '<h4 class="text-sm font-bold text-white uppercase tracking-wide mt-6 mb-2">$1</h4>');
+                html = html.replace(/^## (.*$)/gim, '<h3 class="text-base font-bold text-indigo-400 mt-8 mb-3 border-b border-slate-800 pb-2">$1</h3>');
+                html = html.replace(/^# (.*$)/gim, '<h2 class="text-xl font-bold text-white mb-4">$1</h2>');
+                
+                // Bold markers
+                html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-semibold">$1</strong>');
+                
+                // Bullet points
+                html = html.replace(/^\s*-\s*(.*$)/gim, '<li class="ml-4 pl-1 list-disc text-slate-300 mt-1">$1</li>');
+                html = html.replace(/^\s*\*\s*(.*$)/gim, '<li class="ml-4 pl-1 list-disc text-slate-300 mt-1">$1</li>');
+
+                // Enforce margins on line breaks
+                html = html.split('\n\n').map(p => {
+                    if (p.trim().startsWith('<li') || p.trim().startsWith('<h')) return p;
+                    return `<p class="mb-4 leading-relaxed text-slate-300">${p}</p>`;
+                }).join('');
+
+                return html;
+            }
+
+            // Simple HTML sanitizer utilities to guard DOM outputs
+            function escapeHtml(str) {
+                if (!str) return "";
+                return str.replace(/&/g, "&amp;")
+                          .replace(/</g, "&lt;")
+                          .replace(/>/g, "&gt;")
+                          .replace(/"/g, "&quot;")
+                          .replace(/'/g, "&#039;");
+            }
+
+            // Event Listeners registrations
+            showAddFormBtn.onclick = () => openAddForm();
+            closeFormBtn.onclick = closeAddForm;
+            cancelFormBtn.onclick = closeAddForm;
+
+            // Search inputs event loops
+            searchInput.oninput = renderNewsGrid;
+            tagFilter.onchange = renderNewsGrid;
+
+            // Modal closings
+            document.querySelectorAll(".modal-close-btn").forEach(btn => {
+                btn.onclick = closeArticleDetails;
             });
+            detailModal.onclick = (e) => {
+                if (e.target === detailModal) closeArticleDetails();
+            };
+
+            closeImpactBtn.onclick = () => impactModal.classList.add("hidden");
+            dismissImpactBtn.onclick = () => impactModal.classList.add("hidden");
+            impactModal.onclick = (e) => {
+                if (e.target === impactModal) impactModal.classList.add("hidden");
+            };
+
+            downloadPdfBtn.onclick = exportBriefToPdf;
+            analyzeImpactBtn.onclick = triggerGlobalMarketAnalysis;
+
+            // App initialization routines
+            buildDropdowns();
+            initApiKeyUi();
+            renderNewsGrid();
         })();
     </script>
 </body>
 </html>
 
-
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Banafa's Daily Brief</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    body { background: #121212; color: #ececec; font-family: 'Inter', sans-serif; }
-    .message-box { position: fixed; top: 1rem; right: 1rem; z-index: 50; display:none }
-    .message-box.visible { display:block }
-  </style>
-</head>
-<body>
-  <div id="message-box" class="message-box p-3 rounded font-bold"></div>
-  <div class="container mx-auto max-w-xl p-8">
-    <h1 class="text-2xl mb-8">News Analyzer (Stable Demo)</h1>
-
-    <div id="drop-area" class="p-8 rounded bg-gray-800 text-center border-2 border-dashed border-purple-500 cursor-pointer mb-5">
-      <div>Drag &amp; Drop a PNG/JPEG screenshot or PDF here,<br>or click/copy to browse</div>
-      <input id="imageUpload" type="file" accept="image/*,application/pdf" class="hidden" />
-    </div>
-    <button id="analyzeImageBtn" class="w-full mt-2 mb-4 px-4 py-2 bg-blue-600 text-white font-bold rounded hover:bg-blue-700">Analyze</button>
-    <div id="loadingIndicator" class="my-4 text-blue-400" style="display:none;">
-      <span id="loadingText">Analyzing...</span>
-    </div>
-    <div>
-      <input id="newsTitle" placeholder="Title" class="w-full mb-3 p-2 rounded bg-gray-700" />
-      <textarea id="newsSummary" rows="2" placeholder="Summary" class="w-full mb-3 p-2 rounded bg-gray-700"></textarea>
-      <textarea id="newsFullDescription" rows="4" placeholder="Full Description" class="w-full mb-3 p-2 rounded bg-gray-700"></textarea>
-      <input id="newsTag" placeholder="Tag" class="w-full mb-3 p-2 rounded bg-gray-700" />
-    </div>
-  </div>
-
-  <script>
-    // DOM elements
-    const imageUpload = document.getElementById("imageUpload");
-    const analyzeImageBtn = document.getElementById("analyzeImageBtn");
-    const loadingIndicator = document.getElementById("loadingIndicator");
-    const loadingText = document.getElementById("loadingText");
-    const newsTitleInput = document.getElementById("newsTitle");
-    const newsSummaryInput = document.getElementById("newsSummary");
-    const newsFullDescriptionInput = document.getElementById("newsFullDescription");
-    const newsTagInput = document.getElementById("newsTag");
-    const messageBox = document.getElementById("message-box");
-    const dropArea = document.getElementById("drop-area");
-
-    function showMessage(msg, isError = false) {
-      messageBox.textContent = msg;
-      messageBox.className = "message-box visible p-3 rounded font-bold " + (isError ? "bg-red-500" : "bg-green-600");
-      setTimeout(() => messageBox.className = "message-box p-3 rounded font-bold", 3500);
-    }
-
-    // Universal robust image preprocessor (contrast and grayscale)
-    function preprocessImage(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = e => {
-          const img = new window.Image();
-          img.onload = () => {
-            const canvas = document.createElement('canvas');
-            canvas.width = img.width; canvas.height = img.height;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0);
-            const imageData = ctx.getImageData(0,0,canvas.width,canvas.height);
-            const data = imageData.data;
-            for (let i=0;i<data.length;i+=4) {
-              const gray = 0.3*data[i]+0.59*data[i+1]+0.11*data[i+2];
-              const v = Math.max(0, Math.min(255, (gray-128)*1.3+128));
-              data[i] = data[i+1] = data[i+2] = v;
-            }
-            ctx.putImageData(imageData,0,0);
-            canvas.toBlob(blob => {
-              const r2 = new FileReader();
-              r2.onload = e2 => resolve(e2.target.result.split(",")[1]);
-              r2.readAsDataURL(blob);
-            }, 'image/jpeg', 0.95);
-          };
-          img.onerror = reject;
-          img.src = e.target.result;
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(file);
-      });
-    }
-
-    async function handleFile(file) {
-      if (!file) return showMessage("Please select a file.", true);
-
-      let fileType = file.type;
-      let prompt = "";
-      let base64Data = null;
-
-      loadingIndicator.style.display = "";
-      loadingText.textContent = fileType.startsWith("image/") ? "Improving image..." : "Loading PDF...";
-      analyzeImageBtn.disabled = true;
-      try {
-        if (fileType.startsWith("image/")) {
-          base64Data = await preprocessImage(file);
-          prompt =
-`You are an expert news analyst. Analyze this news screenshot image. Do OCR/vision. Return a JSON object with: "title", "summary", "fullDescription" (as bullet points with **bold** keywords), and "tag" (best guess if not obvious). If the image is poor, do your best. Respond with only the JSON object.`;
-        } else if (fileType === "application/pdf") {
-          base64Data = await new Promise(res=>{
-            const r = new FileReader();
-            r.onload = e => res(e.target.result.split(",")[1]);
-            r.readAsDataURL(file);
-          });
-          prompt =
-`You are an expert news analyst. Analyze this PDF news article. Extract: "title", "summary", "fullDescription" (bulleted), "tag". Respond with only the JSON object.`;
-        } else {
-          showMessage("Unsupported file format.", true);
-          return;
-        }
-      } catch(e) {
-        showMessage("File could not be read or preprocessed.", true);
-        loadingIndicator.style.display = "none";
-        analyzeImageBtn.disabled = false;
-        return;
-      }
-      loadingText.textContent = "Analyzing content...";
-
-      // Build API payload
-      const payload = {
-        contents: [{ parts: [{ text: prompt }, { inlineData: { mimeType: fileType, data: base64Data } }] }],
-        generationConfig: { responseMimeType: "application/json" }
-      };
-      try {
-        const resp = await fetch("/api/generate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
-        if (!resp.ok) {
-          showMessage("Backend error: " + resp.status, true);
-          return;
-        }
-        const result = await resp.json();
-        const dataRaw = result?.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (!dataRaw) throw new Error("No content found");
-        const data = JSON.parse(dataRaw);
-        newsTitleInput.value = data.title || "";
-        newsSummaryInput.value = data.summary || "";
-        newsFullDescriptionInput.value = data.fullDescription || "";
-        newsTagInput.value = data.tag || "";
-        showMessage("Article analyzed and fields filled!");
-      } catch(e) {
-        showMessage("Analysis failed: " + (e.message || e), true);
-      } finally {
-        loadingIndicator.style.display = "none";
-        analyzeImageBtn.disabled = false;
-      }
-    }
-
-    // UI event hooks (robust, no duplicates!)
-    analyzeImageBtn.onclick = () => handleFile(imageUpload.files[0]);
-    imageUpload.onchange = () => {
-      if (imageUpload.files[0]) handleFile(imageUpload.files[0]);
-    };
-    dropArea.ondragover = e => { e.preventDefault(); dropArea.classList.add("bg-purple-800"); };
-    dropArea.ondragleave = () => dropArea.classList.remove("bg-purple-800");
-    dropArea.ondrop = e => {
-      e.preventDefault(); dropArea.classList.remove("bg-purple-800");
-      const files = e.dataTransfer.files;
-      if (files.length > 0) {
-        imageUpload.files = files;
-        handleFile(files[0]);
-      }
-    };
-    dropArea.onclick = () => imageUpload.click();
-  </script>
-</body>
-</html>
