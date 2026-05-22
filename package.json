@@ -1,5 +1,6 @@
 {
   "name": "brief-analyzer",
+  "name": "Banafa's-brief",
   "version": "1.0.0",
   "dependencies": {
     "@google/generative-ai": "^0.12.0",
