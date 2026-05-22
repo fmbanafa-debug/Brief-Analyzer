@@ -3,5 +3,6 @@
   "version": "1.0.0",
   "dependencies": {
     "@google/generative-ai": "latest"
+    "tessercat.js": "^5.0.0"
   }
 }
