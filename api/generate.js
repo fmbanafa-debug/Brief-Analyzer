@@ -9,7 +9,7 @@ export default async function handler(request, response) {
     // 2. Get the API Key securely from Vercel Environment Variables
     const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    return res.status(500).json({ 
+    return response.status(500).json({ 
       error: 'API key is missing. Ensure GEMINI_API_KEY is set in Vercel Environment Variables and redeploy.' 
     });
   }
@@ -23,7 +23,9 @@ export default async function handler(request, response) {
         const genAI = new GoogleGenerativeAI(apiKey);
         
         // Use flash model
-        const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+        const model = genAI.getGenerativeModel({ 
+        model: "gemini-flash-latest",
+        systemInstruction: "You are a specialized legal document analyzer. Extract all text from provided images or PDFs with 100% accuracy. Maintain the structure and do not summarize unless asked." });
 
         // 5. Generate Content
         // We pass the "contents" and "generationConfig" exactly as the frontend prepared them
