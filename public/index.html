@@ -1210,7 +1210,7 @@ Respond with a JSON object ONLY, with the following structure:
                     if (target.classList.contains("copy-btn")) {
                         const index   = parseInt(target.dataset.index, 10);
                         const article = getDisplayArticles()[index];
-                        const text    = `${article.title}\n\n${article.summary}\n\n${stripHtml(article.fullDescription)}${article.url ? '\n\nSource: ' + article.url : ''}`;
+                        const text    = `${article.title}\n\n${article.summary}${article.url ? '\n\n' + article.url : ''}`;
                         navigator.clipboard.writeText(text).then(() => {
                             showMessage('Article copied to clipboard!');
                         }).catch(() => {
