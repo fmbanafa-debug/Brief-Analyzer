@@ -1207,7 +1207,7 @@ Respond with a JSON object ONLY, with the following structure:
                         modal.classList.remove("hidden");
                     }
 
-                    if (target.classList.contains("copy-btn")) {
+                                        if (target.classList.contains("copy-btn")) {
                         const index   = parseInt(target.dataset.index, 10);
                         const article = getDisplayArticles()[index];
                         const text    = `${article.title}\n\n${article.summary}${article.url ? '\n\n' + article.url : ''}`;
