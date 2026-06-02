@@ -560,6 +560,28 @@ Source URL: https://example.com
                     );
                 }
 
+                function formatDescription(raw) {
+                    if (!raw) return '';
+                    const plain = stripHtml(raw);
+                    const lines = plain.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+                    let html = '';
+                    let inList = false;
+                    const applyInline = str => str.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+                    lines.forEach(line => {
+                        const isBullet = /^[-*•]/.test(line);
+                        const cleanLine = applyInline(isBullet ? line.replace(/^[-*•]\s*/, '') : line);
+                        if (isBullet) {
+                            if (!inList) { html += '<ul class="list-disc list-inside space-y-2 mt-2">'; inList = true; }
+                            html += `<li>${cleanLine}</li>`;
+                        } else {
+                            if (inList) { html += '</ul>'; inList = false; }
+                            html += `<p class="mt-2">${cleanLine}</p>`;
+                        }
+                    });
+                    if (inList) html += '</ul>';
+                    return html;
+                }
+
                 function getDisplayArticles() {
                     const selectedTag = tagFilter.value;
                     const filterText = searchInput.value.toLowerCase();
@@ -621,6 +643,11 @@ Source URL: https://example.com
                         <span class="text-xs text-gray-500">${article.date}</span>
                     </div>
                     <div class="mt-4 flex space-x-2 items-center justify-end">
+                        <button class="analyze-csv-btn text-gray-400 hover:text-purple-400 transition-colors" data-index="${index}" title="Analyze & Export CSV">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 pointer-events-none">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+                            </svg>
+                        </button>
                         <button class="copy-btn text-gray-400 hover:text-white transition-colors" data-index="${index}" title="Copy article">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 pointer-events-none">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" />
@@ -1190,7 +1217,7 @@ Respond with a JSON object ONLY, with the following structure:
                 });
 
                 // News grid event delegation
-                newsGrid.addEventListener("click", (e) => {
+                newsGrid.addEventListener("click", async (e) => {
                     const target = e.target;
 
                     if (target.classList.contains("read-more-btn")) {
@@ -1198,16 +1225,123 @@ Respond with a JSON object ONLY, with the following structure:
                         const article = getDisplayArticles()[index];
                         modalTitle.textContent = article.title;
                         modalContent.innerHTML = `
-                    <p><strong>Tag:</strong> ${article.tag}</p>
-                    <p><strong>Date:</strong> ${article.date}</p>
-                    <p class="mt-4"><strong>Summary:</strong> ${article.summary}</p>
-                    <div class="mt-4"><strong>Full Description:</strong><br>${article.fullDescription}</div>
-                    ${article.url ? `<p class="mt-4"><a href="${article.url}" target="_blank" rel="noopener noreferrer" class="text-blue-400 hover:text-blue-300">View Source</a></p>` : ""}
-                `;
+                            <p><strong>Tag:</strong> ${article.tag}</p>
+                            <p><strong>Date:</strong> ${article.date}</p>
+                            <p class="mt-4"><strong>Summary:</strong> ${article.summary}</p>
+                            <div class="mt-4">
+                                <div class="flex items-center justify-between mb-2">
+                                    <strong>Full Description:</strong>
+                                    <button id="reformatBtn" class="px-3 py-1 text-xs bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">Reformat with AI ✨</button>
+                                </div>
+                                <div id="modalDescriptionBody" class="text-gray-300 space-y-1">${formatDescription(article.fullDescription)}</div>
+                            </div>
+                            ${article.url ? `<p class="mt-4"><a href="${article.url}" target="_blank" rel="noopener noreferrer" class="text-blue-400 hover:text-blue-300">View Source</a></p>` : ""}
+                        `;
                         modal.classList.remove("hidden");
+
+                        document.getElementById('reformatBtn').addEventListener('click', async function () {
+                            const btn = this;
+                            const descBody = document.getElementById('modalDescriptionBody');
+                            btn.disabled = true;
+                            btn.textContent = 'Reformatting...';
+                            const rawText = stripHtml(article.fullDescription);
+                            const payload = {
+                                contents: [{
+                                    parts: [{ text: `You are a news editor. Rewrite the following article description as clean, well-organized bullet points. Each bullet should start with a bold keyword followed by a colon and the key point. Do not copy the text verbatim — rephrase clearly and concisely. Respond with only the bullet list, one item per line, each starting with "- **Keyword**: description".\n\nText:\n${rawText}` }]
+                                }]
+                            };
+                            try {
+                                const resp = await fetch('/api/generate', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify(payload)
+                                });
+                                const result = await resp.json();
+                                const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+                                if (text) {
+                                    descBody.innerHTML = formatDescription(text.trim());
+                                    btn.textContent = 'Reformatted ✓';
+                                } else {
+                                    btn.textContent = 'Failed — try again';
+                                    btn.disabled = false;
+                                }
+                            } catch (err) {
+                                btn.textContent = 'Failed — try again';
+                                btn.disabled = false;
+                            }
+                        });
                     }
 
-                                        if (target.classList.contains("copy-btn")) {
+                    if (target.classList.contains("analyze-csv-btn")) {
+                        const index   = parseInt(target.dataset.index, 10);
+                        const article = getDisplayArticles()[index];
+                        const btn     = target;
+                        btn.classList.add("opacity-50", "cursor-wait");
+                        showMessage("Analyzing article — CSV will download shortly…");
+
+                        const rawDesc = stripHtml(article.fullDescription);
+                        const payload = {
+                            contents: [{
+                                parts: [{ text: `You are a news analyst. Analyze the following news article and return a JSON object with exactly these keys:
+- "title": the article title
+- "date": the article date
+- "tag": the article category/tag
+- "summary": a concise 1-sentence summary
+- "main_theme": the central topic in 3-5 words
+- "key_points": an array of 3-5 concise key points (strings), each paraphrased — do NOT copy verbatim
+- "stakeholders": comma-separated list of main entities mentioned (companies, people, organizations)
+- "sentiment": one of Positive / Negative / Neutral
+- "market_impact": a brief 1-sentence assessment of the potential market or industry impact
+- "action_items": a brief 1-sentence suggestion of what to watch for next
+
+Article:
+Title: ${article.title}
+Date: ${article.date}
+Tag: ${article.tag}
+Summary: ${article.summary}
+Description: ${rawDesc}
+
+Respond with ONLY the JSON object.` }]
+                            }],
+                            generationConfig: { responseMimeType: "application/json" }
+                        };
+
+                        try {
+                            const resp = await fetch('/api/generate', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(payload)
+                            });
+                            const result = await resp.json();
+                            const jsonText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+                            if (!jsonText) throw new Error('No data returned');
+                            const cleaned = jsonText.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
+                            const data = JSON.parse(cleaned);
+
+                            // Build CSV — key_points joined as semicolons
+                            const keyPoints = Array.isArray(data.key_points) ? data.key_points.join('; ') : (data.key_points || '');
+                            const csvEscape = v => `"${String(v || '').replace(/"/g, '""')}"`;
+                            const headers = ['Title','Date','Tag','Summary','Main Theme','Key Points','Stakeholders','Sentiment','Market Impact','Action Items'];
+                            const values  = [data.title, data.date, data.tag, data.summary, data.main_theme, keyPoints, data.stakeholders, data.sentiment, data.market_impact, data.action_items];
+                            const csvContent = [headers.map(csvEscape).join(','), values.map(csvEscape).join(',')].join('\n');
+
+                            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                            const a    = document.createElement('a');
+                            a.href     = URL.createObjectURL(blob);
+                            const safeTitle = (data.title || 'article').replace(/[^a-z0-9]/gi, '_').substring(0, 40);
+                            a.download = `analysis_${safeTitle}.csv`;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            showMessage('Analysis exported as CSV!');
+                        } catch (err) {
+                            showMessage('Analysis failed: ' + (err.message || err), 'error');
+                        } finally {
+                            btn.classList.remove("opacity-50", "cursor-wait");
+                        }
+                    }
+
+                    if (target.classList.contains("copy-btn")) {
                         const index   = parseInt(target.dataset.index, 10);
                         const article = getDisplayArticles()[index];
                         const text    = `${article.title}\n\n${article.summary}${article.url ? '\n\n' + article.url : ''}`;
