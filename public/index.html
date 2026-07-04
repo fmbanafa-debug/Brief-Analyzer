@@ -6,11 +6,11 @@
         <title>Banafa's Daily Brief</title>
         <script src="https://cdn.tailwindcss.com"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link
             href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap"
-            rel="stylesheet"
         />
         <style>
             body {
@@ -307,13 +307,35 @@
         <div
             id="modal"
             class="fixed inset-0 bg-gray-900 bg-opacity-80 flex items-center justify-center p-4 hidden"
+         class="fixed inset-0 bg-gray-900 bg-opacity-80 flex items-center justify-center p-4 hidden"
         >
             <div
+                id="modalCard"
                 class="bg-gray-800 rounded-2xl p-8 max-w-2xl w-full relative shadow-xl"
             >
                 <button
-                    id="closeModal"
-                    class="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+                >
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        class="h-6 w-6"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                    >
+                        <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                              stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12"
+                        />
+                    </svg>
+                </button>
+                <button
+                    id="exportImageBtn"
+                    title="Download as image"
+                    class="absolute top-4 right-14 text-gray-400 hover:text-white transition-colors"
                 >
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -326,32 +348,10 @@
                             stroke-linecap="round"
                             stroke-linejoin="round"
                             stroke-width="2"
-                            d="M6 18L18 6M6 6l12 12"
+                            d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3"
                         />
                     </svg>
                 </button>
-                <h3
-                    id="modalTitle"
-                    class="text-2xl font-bold text-white mb-4"
-                ></h3>
-                <div
-                    id="modalContent"
-                    class="text-gray-300 overflow-y-auto max-h-[70vh]"
-                ></div>
-            </div>
-        </div>
-
-        <!-- Modal: Import -->
-        <div
-            id="importModal"
-            class="fixed inset-0 bg-gray-900 bg-opacity-80 flex items-center justify-center p-4 hidden"
-        >
-            <div
-                class="bg-gray-800 rounded-2xl p-8 max-w-2xl w-full relative shadow-xl"
-            >
-                <h3 class="text-2xl font-bold text-white mb-4">
-                    Import Articles
-                </h3>
                 <p class="text-gray-400 mb-4">
                     Paste the content from your exported .txt file below.
                 </p>
@@ -1395,6 +1395,89 @@ Respond with ONLY the JSON object.` }]
                 modal.addEventListener("click", (e) => {
                     if (e.target === modal) modal.classList.add("hidden");
                 });
+
+                selectAllBtn.addEventListener("click", () => {
+                    const checkboxes = document.querySelectorAll(
+                        '.news-card input[type="checkbox"]',
+                    );
+                    isSelectAll = !isSelectAll;
+                    checkboxes.forEach((cb) => (cb.checked = isSelectAll));
+                    selectAllBtn.textContent = isSelectAll
+                        ? "Deselect All"
+                        : "Select All";
+                });
+
+                exportBtn.addEventListener("click", handleExport);
+
+                importBtn.addEventListener("click", () =>
+                    importModal.classList.remove("hidden"),
+                );
+                cancelImportBtn.addEventListener("click", () => {
+                    );
+                modal.addEventListener("click", (e) => {
+                    if (e.target === modal) modal.classList.add("hidden");
+                });
+
+                document
+                    .getElementById("exportImageBtn")
+                    .addEventListener("click", async function () {
+                        const btn = this;
+                        const modalCard = document.getElementById("modalCard");
+                        const originalMaxHeight = modalContent.style.maxHeight;
+                        const originalOverflow = modalContent.style.overflowY;
+                        const originalClasses = modalContent.className;
+
+                        btn.classList.add("opacity-50", "cursor-wait");
+                        showMessage("Preparing image…");
+
+                        // Temporarily expand the scrollable content so the full
+                        // (currently-hidden/scrolled) text is captured.
+                        modalContent.classList.remove(
+                            "overflow-y-auto",
+                            "max-h-[70vh]",
+                        );
+                        modalContent.style.maxHeight = "none";
+                        modalContent.style.overflowY = "visible";
+
+                        try {
+                            // Give the browser a tick to reflow before capture.
+                            await new Promise((r) => setTimeout(r, 50));
+
+                            const canvas = await html2canvas(modalCard, {
+                                backgroundColor: "#1f2937",
+                                scale: 2,
+                                useCORS: true,
+                            });
+
+                            const dataUrl = canvas.toDataURL("image/png");
+                            const a = document.createElement("a");
+                            const safeTitle = (
+                                modalTitle.textContent || "article"
+                            )
+                                .replace(/[^a-z0-9]/gi, "_")
+                                .substring(0, 50);
+                            a.href = dataUrl;
+                            a.download = `${safeTitle}.png`;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            showMessage("Image downloaded!");
+                        } catch (err) {
+                            showMessage(
+                                "Failed to export image: " +
+                                    (err.message || err),
+                                "error",
+                            );
+                        } finally {
+                            modalContent.className = originalClasses;
+                            modalContent.style.maxHeight = originalMaxHeight;
+                            modalContent.style.overflowY = originalOverflow;
+                            btn.classList.remove(
+                                "opacity-50",
+                                "cursor-wait",
+                            );
+                        }
+                    });
 
                 selectAllBtn.addEventListener("click", () => {
                     const checkboxes = document.querySelectorAll(
