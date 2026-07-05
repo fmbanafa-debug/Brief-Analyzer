@@ -11,6 +11,7 @@
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link
             href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap"
+            rel="stylesheet"
         />
         <style>
             body {
@@ -307,13 +308,14 @@
         <div
             id="modal"
             class="fixed inset-0 bg-gray-900 bg-opacity-80 flex items-center justify-center p-4 hidden"
-         class="fixed inset-0 bg-gray-900 bg-opacity-80 flex items-center justify-center p-4 hidden"
         >
             <div
                 id="modalCard"
                 class="bg-gray-800 rounded-2xl p-8 max-w-2xl w-full relative shadow-xl"
             >
                 <button
+                    id="closeModal"
+                    class="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
                 >
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -324,8 +326,6 @@
                     >
                         <path
                             stroke-linecap="round"
-                            stroke-linejoin="round"
-                              stroke-linecap="round"
                             stroke-linejoin="round"
                             stroke-width="2"
                             d="M6 18L18 6M6 6l12 12"
@@ -352,6 +352,28 @@
                         />
                     </svg>
                 </button>
+                <h3
+                    id="modalTitle"
+                    class="text-2xl font-bold text-white mb-4"
+                ></h3>
+                <div
+                    id="modalContent"
+                    class="text-gray-300 overflow-y-auto max-h-[70vh]"
+                ></div>
+            </div>
+        </div>
+
+        <!-- Modal: Import -->
+        <div
+            id="importModal"
+            class="fixed inset-0 bg-gray-900 bg-opacity-80 flex items-center justify-center p-4 hidden"
+        >
+            <div
+                class="bg-gray-800 rounded-2xl p-8 max-w-2xl w-full relative shadow-xl"
+            >
+                <h3 class="text-2xl font-bold text-white mb-4">
+                    Import Articles
+                </h3>
                 <p class="text-gray-400 mb-4">
                     Paste the content from your exported .txt file below.
                 </p>
@@ -1392,28 +1414,6 @@ Respond with ONLY the JSON object.` }]
                 closeModalBtn.addEventListener("click", () =>
                     modal.classList.add("hidden"),
                 );
-                modal.addEventListener("click", (e) => {
-                    if (e.target === modal) modal.classList.add("hidden");
-                });
-
-                selectAllBtn.addEventListener("click", () => {
-                    const checkboxes = document.querySelectorAll(
-                        '.news-card input[type="checkbox"]',
-                    );
-                    isSelectAll = !isSelectAll;
-                    checkboxes.forEach((cb) => (cb.checked = isSelectAll));
-                    selectAllBtn.textContent = isSelectAll
-                        ? "Deselect All"
-                        : "Select All";
-                });
-
-                exportBtn.addEventListener("click", handleExport);
-
-                importBtn.addEventListener("click", () =>
-                    importModal.classList.remove("hidden"),
-                );
-                cancelImportBtn.addEventListener("click", () => {
-                    );
                 modal.addEventListener("click", (e) => {
                     if (e.target === modal) modal.classList.add("hidden");
                 });
