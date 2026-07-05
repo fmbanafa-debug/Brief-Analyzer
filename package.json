@@ -2,7 +2,7 @@
   "name": "banafa's-brief",
   "version": "1.0.0",
   "dependencies": {
-    "@google/generative-ai": "latest"
+    "@google/generative-ai": "^0.21.0"
   },
   "devDependencies": {}
 }
