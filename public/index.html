@@ -982,10 +982,13 @@ Respond with a JSON object ONLY, with the following structure:
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify(payload),
                         });
-                        if (!response.ok)
-                            throw new Error(`HTTP ${response.status}`);
-
                         const result = await response.json();
+                        if (!response.ok) {
+                            throw new Error(
+                                result?.error || `HTTP ${response.status}`,
+                            );
+                        }
+
                         const jsonText =
                             result?.candidates?.[0]?.content?.parts?.[0]?.text;
                         if (!jsonText)
@@ -1335,6 +1338,9 @@ Respond with ONLY the JSON object.` }]
                                 body: JSON.stringify(payload)
                             });
                             const result = await resp.json();
+                            if (!resp.ok) {
+                                throw new Error(result?.error || `HTTP ${resp.status}`);
+                            }
                             const jsonText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
                             if (!jsonText) throw new Error('No data returned');
                             const cleaned = jsonText.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
