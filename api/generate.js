@@ -24,7 +24,7 @@ export default async function handler(request, response) {
         
         // Use flash model
         const model = genAI.getGenerativeModel({ 
-        model: "gemini-latest-flash",
+        model: "gemini-3.5-latest-flash",
         systemInstruction: "You are a specialized legal document analyzer. Extract all text from provided images or PDFs with 100% accuracy. Maintain the structure and do not summarize unless asked." });
 
         // 5. Generate Content
