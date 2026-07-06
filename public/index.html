@@ -707,9 +707,27 @@ Respond with ONLY the JSON object.` }]
                     return JSON.parse(cleaned);
                 }
 
+                function wrapCellText(text, maxWidth = 60) {
+                    const str = String(text || '');
+                    if (str.length <= maxWidth) return str;
+                    const words = str.split(/\s+/);
+                    const lines = [];
+                    let line = '';
+                    words.forEach((word) => {
+                        if (line && (line + ' ' + word).length > maxWidth) {
+                            lines.push(line);
+                            line = word;
+                        } else {
+                            line = line ? line + ' ' + word : word;
+                        }
+                    });
+                    if (line) lines.push(line);
+                    return lines.join('\n');
+                }
+
                 function buildAnalysisCsv(data) {
                     const keyPoints = Array.isArray(data.key_points) ? data.key_points.join('; ') : (data.key_points || '');
-                    const csvEscape = v => `"${String(v || '').replace(/"/g, '""')}"`;
+                    const csvEscape = v => `"${wrapCellText(v).replace(/"/g, '""')}"`;
                     const headers = ['Title','Date','Tag','Summary','Main Theme','Key Points','Stakeholders','Sentiment','Market Impact','Action Items'];
                     const values  = [data.title, data.date, data.tag, data.summary, data.main_theme, keyPoints, data.stakeholders, data.sentiment, data.market_impact, data.action_items];
                     return [headers.map(csvEscape).join(','), values.map(csvEscape).join(',')].join('\n');
@@ -1748,7 +1766,24 @@ Respond with a JSON object ONLY, with the following structure:
                 );
 
                 analyzeImpactBtn.addEventListener("click", () => {
-                    const articles = getDisplayArticles();
+                    const selectedCheckboxes = document.querySelectorAll(
+                        '.news-card input[type="checkbox"]:checked',
+                    );
+                    if (selectedCheckboxes.length === 0) {
+                        showMessage(
+                            "Please select at least one article to analyze.",
+                            "error",
+                        );
+                        return;
+                    }
+                    const displayArticles = getDisplayArticles();
+                    const articles = Array.from(selectedCheckboxes)
+                        .map((cb) => {
+                            const card = cb.closest(".news-card");
+                            const idx = parseInt(card.dataset.index, 10);
+                            return displayArticles[idx];
+                        })
+                        .filter(Boolean);
                     if (articles.length === 0) {
                         showMessage("No articles to analyze.", "error");
                         return;
