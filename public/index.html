@@ -7,6 +7,7 @@
         <script src="https://cdn.tailwindcss.com"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link
@@ -576,14 +577,129 @@ Source URL: https://example.com
                 }
 
                 function stripHtml(html) {
-                    return (
-                        new DOMParser().parseFromString(html, "text/html").body
-                            .textContent || ""
+                    if (!html) return "";
+                    const doc = new DOMParser().parseFromString(
+                        html,
+                        "text/html",
                     );
+                    // Insert newlines at block boundaries so structure
+                    // (list items, paragraphs) survives the text conversion,
+                    // instead of getting mashed into one long line.
+                    doc.body
+                        .querySelectorAll("li, p, br, div")
+                        .forEach((el) => {
+                            el.insertAdjacentText("beforebegin", "\n");
+                            if (el.tagName === "LI") {
+                                el.insertAdjacentText("afterbegin", "- ");
+                            }
+                        });
+                    return (doc.body.textContent || "")
+                        .split("\n")
+                        .map((l) => l.trim())
+                        .filter((l) => l.length > 0)
+                        .join("\n");
+                }
+
+                function isPreFormattedHtml(raw) {
+                    return typeof raw === "string" && /<(ul|p|li)[\s>]/i.test(raw);
+                }
+
+                function toTitleCase(str) {
+                    if (!str) return "";
+                    return str
+                        .replace(/[_\-.]+/g, " ")
+                        .replace(/\s+/g, " ")
+                        .trim()
+                        .toLowerCase()
+                        .split(" ")
+                        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+                        .join(" ");
+                }
+
+                function htmlToPlainParagraphs(raw) {
+                    if (!raw) return "";
+                    const formatted = formatDescription(raw);
+                    const container = document.createElement("div");
+                    container.innerHTML = formatted;
+                    const paragraphs = [];
+
+                    Array.from(container.childNodes).forEach((node) => {
+                        if (node.nodeType === Node.TEXT_NODE) {
+                            const t = node.textContent.trim();
+                            if (t) paragraphs.push(t);
+                        } else if (node.nodeName === "P") {
+                            const t = node.textContent.trim();
+                            if (t) paragraphs.push(t);
+                        } else if (node.nodeName === "UL") {
+                            Array.from(node.querySelectorAll("li")).forEach(
+                                (li) => {
+                                    const liText = li.textContent.trim();
+                                    if (liText) paragraphs.push("- " + liText);
+                                },
+                            );
+                        }
+                    });
+
+                    return paragraphs.join("\n\n");
+                }
+
+                async function analyzeArticleData(article) {
+                    const rawDesc = stripHtml(article.fullDescription);
+                    const payload = {
+                        contents: [{
+                            parts: [{ text: `You are a news analyst. Analyze the following news article and return a JSON object with exactly these keys:
+- "title": the article title
+- "date": the article date
+- "tag": the article category/tag
+- "summary": a concise 1-sentence summary
+- "main_theme": the central topic in 3-5 words
+- "key_points": an array of 3-5 concise key points (strings), each paraphrased — do NOT copy verbatim
+- "stakeholders": comma-separated list of main entities mentioned (companies, people, organizations)
+- "sentiment": one of Positive / Negative / Neutral
+- "market_impact": a brief 1-sentence assessment of the potential market or industry impact
+- "action_items": a brief 1-sentence suggestion of what to watch for next
+
+Article:
+Title: ${article.title}
+Date: ${article.date}
+Tag: ${article.tag}
+Summary: ${article.summary}
+Description: ${rawDesc}
+
+Respond with ONLY the JSON object.` }]
+                        }],
+                        generationConfig: { responseMimeType: "application/json" }
+                    };
+
+                    const resp = await fetch('/api/generate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const result = await resp.json();
+                    if (!resp.ok) {
+                        throw new Error(result?.error || `HTTP ${resp.status}`);
+                    }
+                    const jsonText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (!jsonText) throw new Error('No data returned');
+                    const cleaned = jsonText.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
+                    return JSON.parse(cleaned);
+                }
+
+                function buildAnalysisCsv(data) {
+                    const keyPoints = Array.isArray(data.key_points) ? data.key_points.join('; ') : (data.key_points || '');
+                    const csvEscape = v => `"${String(v || '').replace(/"/g, '""')}"`;
+                    const headers = ['Title','Date','Tag','Summary','Main Theme','Key Points','Stakeholders','Sentiment','Market Impact','Action Items'];
+                    const values  = [data.title, data.date, data.tag, data.summary, data.main_theme, keyPoints, data.stakeholders, data.sentiment, data.market_impact, data.action_items];
+                    return [headers.map(csvEscape).join(','), values.map(csvEscape).join(',')].join('\n');
                 }
 
                 function formatDescription(raw) {
                     if (!raw) return '';
+                    // Already-formatted HTML (e.g. previously saved articles)
+                    // should be displayed as-is, not re-stripped and
+                    // re-parsed — doing so mashes list items together.
+                    if (isPreFormattedHtml(raw)) return raw;
                     const plain = stripHtml(raw);
                     const lines = plain.split('\n').map(l => l.trim()).filter(l => l.length > 0);
                     let html = '';
@@ -863,10 +979,40 @@ Respond with ONLY the JSON object, no additional text.`;
                             .trim();
                         const data = JSON.parse(cleaned);
 
-                        newsTitleInput.value = data.title || "";
+                        // Normalize title: prefer the extracted title, but fall
+                        // back to a cleaned-up filename if it looks like a raw
+                        // filename or is missing/too short.
+                        let extractedTitle = (data.title || "").trim();
+                        if (
+                            !extractedTitle ||
+                            /^[\w\-.]+$/.test(extractedTitle) ||
+                            extractedTitle.toLowerCase().includes("img") ||
+                            extractedTitle.length < 3
+                        ) {
+                            if (file && file.name) {
+                                extractedTitle = file.name
+                                    .replace(/\.[^/.]+$/, "")
+                                    .replace(/[_\-.]+/g, " ");
+                            }
+                        }
+                        newsTitleInput.value = toTitleCase(extractedTitle);
+
                         newsSummaryInput.value = data.summary || "";
+
+                        // Show a readable plain-text preview in the textarea,
+                        // while keeping the nicely formatted HTML version ready
+                        // to save (so "Read more" looks good immediately,
+                        // without needing to press "Reformat with AI").
+                        const rawFull =
+                            data.fullDescription || data.summary || "";
+                        const formattedHtml = formatDescription(rawFull);
                         newsFullDescriptionInput.value =
-                            data.fullDescription || "";
+                            htmlToPlainParagraphs(rawFull);
+                        newsFullDescriptionInput.dataset.formattedHtml =
+                            formattedHtml;
+                        newsFullDescriptionInput.dataset.sourceText =
+                            newsFullDescriptionInput.value;
+
                         if (data.tag && availableTags.includes(data.tag)) {
                             newsTagInput.value = data.tag;
                         }
@@ -982,10 +1128,13 @@ Respond with a JSON object ONLY, with the following structure:
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify(payload),
                         });
-                        if (!response.ok)
-                            throw new Error(`HTTP ${response.status}`);
-
                         const result = await response.json();
+                        if (!response.ok) {
+                            throw new Error(
+                                result?.error || `HTTP ${response.status}`,
+                            );
+                        }
+
                         const jsonText =
                             result?.candidates?.[0]?.content?.parts?.[0]?.text;
                         if (!jsonText)
@@ -1189,6 +1338,8 @@ Respond with a JSON object ONLY, with the following structure:
                     document.getElementById("formTitle").textContent =
                         "Add a New Article";
                     addNewsForm.reset();
+                    delete newsFullDescriptionInput.dataset.formattedHtml;
+                    delete newsFullDescriptionInput.dataset.sourceText;
                     selectedFileName.textContent = "";
                     addFormContainer.classList.remove("hidden");
                     addFormContainer.scrollIntoView({ behavior: "smooth" });
@@ -1197,16 +1348,33 @@ Respond with a JSON object ONLY, with the following structure:
                 cancelFormBtn.addEventListener("click", () => {
                     addFormContainer.classList.add("hidden");
                     addNewsForm.reset();
+                    delete newsFullDescriptionInput.dataset.formattedHtml;
+                    delete newsFullDescriptionInput.dataset.sourceText;
                     editingIndex = -1;
                 });
 
                 addNewsForm.addEventListener("submit", (e) => {
                     e.preventDefault();
                     const articles = loadNews();
+
+                    // Prefer the pre-formatted HTML captured right after
+                    // extraction (so "Read more" shows nice paragraphs/bullets
+                    // immediately). If the user edited the textarea manually,
+                    // or there's no cached formatted version, format the
+                    // current textarea value instead.
+                    const fullDescriptionHtml =
+                        newsFullDescriptionInput.dataset.formattedHtml &&
+                        newsFullDescriptionInput.dataset.sourceText ===
+                            newsFullDescriptionInput.value
+                            ? newsFullDescriptionInput.dataset.formattedHtml
+                            : formatDescription(
+                                  newsFullDescriptionInput.value,
+                              );
+
                     const newArticle = {
                         title: newsTitleInput.value,
                         summary: newsSummaryInput.value,
-                        fullDescription: newsFullDescriptionInput.value,
+                        fullDescription: fullDescriptionHtml,
                         date: new Date().toLocaleDateString("en-US", {
                             year: "numeric",
                             month: "long",
@@ -1281,8 +1449,22 @@ Respond with a JSON object ONLY, with the following structure:
                                 const result = await resp.json();
                                 const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
                                 if (text) {
-                                    descBody.innerHTML = formatDescription(text.trim());
+                                    const newFormattedHtml = formatDescription(text.trim());
+                                    descBody.innerHTML = newFormattedHtml;
                                     btn.textContent = 'Reformatted ✓';
+
+                                    // Persist the reformatted version so it
+                                    // survives closing/reopening the modal
+                                    // instead of reverting to the original.
+                                    const allArticles = loadNews();
+                                    const actualIndex = allArticles.findIndex(
+                                        (a) => a.title === article.title && a.date === article.date,
+                                    );
+                                    if (actualIndex >= 0) {
+                                        allArticles[actualIndex].fullDescription = newFormattedHtml;
+                                        article.fullDescription = newFormattedHtml;
+                                        saveNews(allArticles);
+                                    }
                                 } else {
                                     btn.textContent = 'Failed — try again';
                                     btn.disabled = false;
@@ -1295,57 +1477,94 @@ Respond with a JSON object ONLY, with the following structure:
                     }
 
                     if (target.classList.contains("analyze-csv-btn")) {
+                        const btn = target;
+                        const selectedCheckboxes = document.querySelectorAll(
+                            '.news-card input[type="checkbox"]:checked',
+                        );
+
+                        btn.classList.add("opacity-50", "cursor-wait");
+
+                        if (selectedCheckboxes.length > 1) {
+                            // Bulk mode: analyze every selected article and zip the CSVs together.
+                            const displayArticles = getDisplayArticles();
+                            const articles = Array.from(selectedCheckboxes)
+                                .map((cb) => {
+                                    const card = cb.closest(".news-card");
+                                    const idx = parseInt(card.dataset.index, 10);
+                                    return displayArticles[idx];
+                                })
+                                .filter(Boolean);
+
+                            const zip = new JSZip();
+                            const usedNames = new Set();
+                            let successCount = 0;
+                            let failCount = 0;
+
+                            for (let i = 0; i < articles.length; i++) {
+                                const article = articles[i];
+                                showMessage(
+                                    `Analyzing article ${i + 1} of ${articles.length}…`,
+                                );
+                                try {
+                                    const data = await analyzeArticleData(article);
+                                    const csvContent = buildAnalysisCsv(data);
+                                    let safeTitle = (
+                                        data.title ||
+                                        article.title ||
+                                        `article_${i + 1}`
+                                    )
+                                        .replace(/[^a-z0-9]/gi, "_")
+                                        .substring(0, 40);
+                                    let fileName = `${safeTitle}.csv`;
+                                    let suffix = 2;
+                                    while (usedNames.has(fileName)) {
+                                        fileName = `${safeTitle}_${suffix}.csv`;
+                                        suffix++;
+                                    }
+                                    usedNames.add(fileName);
+                                    zip.file(fileName, csvContent);
+                                    successCount++;
+                                } catch (err) {
+                                    failCount++;
+                                    zip.file(
+                                        `FAILED_${article.title.replace(/[^a-z0-9]/gi, "_").substring(0, 30)}.txt`,
+                                        `Analysis failed: ${err.message || err}`,
+                                    );
+                                }
+                            }
+
+                            try {
+                                const zipBlob = await zip.generateAsync({ type: "blob" });
+                                const a = document.createElement("a");
+                                a.href = URL.createObjectURL(zipBlob);
+                                a.download = `analysis_${articles.length}_articles.zip`;
+                                document.body.appendChild(a);
+                                a.click();
+                                document.body.removeChild(a);
+                                showMessage(
+                                    failCount > 0
+                                        ? `Zip downloaded: ${successCount} succeeded, ${failCount} failed.`
+                                        : `Zip downloaded with ${successCount} article analyses!`,
+                                );
+                            } catch (err) {
+                                showMessage(
+                                    "Failed to create zip: " + (err.message || err),
+                                    "error",
+                                );
+                            } finally {
+                                btn.classList.remove("opacity-50", "cursor-wait");
+                            }
+                            return;
+                        }
+
+                        // Single-article mode.
                         const index   = parseInt(target.dataset.index, 10);
                         const article = getDisplayArticles()[index];
-                        const btn     = target;
-                        btn.classList.add("opacity-50", "cursor-wait");
                         showMessage("Analyzing article — CSV will download shortly…");
 
-                        const rawDesc = stripHtml(article.fullDescription);
-                        const payload = {
-                            contents: [{
-                                parts: [{ text: `You are a news analyst. Analyze the following news article and return a JSON object with exactly these keys:
-- "title": the article title
-- "date": the article date
-- "tag": the article category/tag
-- "summary": a concise 1-sentence summary
-- "main_theme": the central topic in 3-5 words
-- "key_points": an array of 3-5 concise key points (strings), each paraphrased — do NOT copy verbatim
-- "stakeholders": comma-separated list of main entities mentioned (companies, people, organizations)
-- "sentiment": one of Positive / Negative / Neutral
-- "market_impact": a brief 1-sentence assessment of the potential market or industry impact
-- "action_items": a brief 1-sentence suggestion of what to watch for next
-
-Article:
-Title: ${article.title}
-Date: ${article.date}
-Tag: ${article.tag}
-Summary: ${article.summary}
-Description: ${rawDesc}
-
-Respond with ONLY the JSON object.` }]
-                            }],
-                            generationConfig: { responseMimeType: "application/json" }
-                        };
-
                         try {
-                            const resp = await fetch('/api/generate', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify(payload)
-                            });
-                            const result = await resp.json();
-                            const jsonText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
-                            if (!jsonText) throw new Error('No data returned');
-                            const cleaned = jsonText.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
-                            const data = JSON.parse(cleaned);
-
-                            // Build CSV — key_points joined as semicolons
-                            const keyPoints = Array.isArray(data.key_points) ? data.key_points.join('; ') : (data.key_points || '');
-                            const csvEscape = v => `"${String(v || '').replace(/"/g, '""')}"`;
-                            const headers = ['Title','Date','Tag','Summary','Main Theme','Key Points','Stakeholders','Sentiment','Market Impact','Action Items'];
-                            const values  = [data.title, data.date, data.tag, data.summary, data.main_theme, keyPoints, data.stakeholders, data.sentiment, data.market_impact, data.action_items];
-                            const csvContent = [headers.map(csvEscape).join(','), values.map(csvEscape).join(',')].join('\n');
+                            const data = await analyzeArticleData(article);
+                            const csvContent = buildAnalysisCsv(data);
 
                             const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
                             const a    = document.createElement('a');
@@ -1400,7 +1619,11 @@ Respond with ONLY the JSON object.` }]
                         newsTitleInput.value = article.title;
                         newsSummaryInput.value = article.summary;
                         newsFullDescriptionInput.value =
+                            htmlToPlainParagraphs(article.fullDescription);
+                        newsFullDescriptionInput.dataset.formattedHtml =
                             article.fullDescription;
+                        newsFullDescriptionInput.dataset.sourceText =
+                            newsFullDescriptionInput.value;
                         newsTagInput.value = article.tag;
                         newsUrlInput.value = article.url || "";
                         editingIndex = index;
