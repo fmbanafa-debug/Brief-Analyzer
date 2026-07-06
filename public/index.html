@@ -577,10 +577,31 @@ Source URL: https://example.com
                 }
 
                 function stripHtml(html) {
-                    return (
-                        new DOMParser().parseFromString(html, "text/html").body
-                            .textContent || ""
+                    if (!html) return "";
+                    const doc = new DOMParser().parseFromString(
+                        html,
+                        "text/html",
                     );
+                    // Insert newlines at block boundaries so structure
+                    // (list items, paragraphs) survives the text conversion,
+                    // instead of getting mashed into one long line.
+                    doc.body
+                        .querySelectorAll("li, p, br, div")
+                        .forEach((el) => {
+                            el.insertAdjacentText("beforebegin", "\n");
+                            if (el.tagName === "LI") {
+                                el.insertAdjacentText("afterbegin", "- ");
+                            }
+                        });
+                    return (doc.body.textContent || "")
+                        .split("\n")
+                        .map((l) => l.trim())
+                        .filter((l) => l.length > 0)
+                        .join("\n");
+                }
+
+                function isPreFormattedHtml(raw) {
+                    return typeof raw === "string" && /<(ul|p|li)[\s>]/i.test(raw);
                 }
 
                 function toTitleCase(str) {
@@ -675,6 +696,10 @@ Respond with ONLY the JSON object.` }]
 
                 function formatDescription(raw) {
                     if (!raw) return '';
+                    // Already-formatted HTML (e.g. previously saved articles)
+                    // should be displayed as-is, not re-stripped and
+                    // re-parsed — doing so mashes list items together.
+                    if (isPreFormattedHtml(raw)) return raw;
                     const plain = stripHtml(raw);
                     const lines = plain.split('\n').map(l => l.trim()).filter(l => l.length > 0);
                     let html = '';
@@ -1424,8 +1449,22 @@ Respond with a JSON object ONLY, with the following structure:
                                 const result = await resp.json();
                                 const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
                                 if (text) {
-                                    descBody.innerHTML = formatDescription(text.trim());
+                                    const newFormattedHtml = formatDescription(text.trim());
+                                    descBody.innerHTML = newFormattedHtml;
                                     btn.textContent = 'Reformatted ✓';
+
+                                    // Persist the reformatted version so it
+                                    // survives closing/reopening the modal
+                                    // instead of reverting to the original.
+                                    const allArticles = loadNews();
+                                    const actualIndex = allArticles.findIndex(
+                                        (a) => a.title === article.title && a.date === article.date,
+                                    );
+                                    if (actualIndex >= 0) {
+                                        allArticles[actualIndex].fullDescription = newFormattedHtml;
+                                        article.fullDescription = newFormattedHtml;
+                                        saveNews(allArticles);
+                                    }
                                 } else {
                                     btn.textContent = 'Failed — try again';
                                     btn.disabled = false;
