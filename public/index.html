@@ -583,6 +583,45 @@ Source URL: https://example.com
                     );
                 }
 
+                function toTitleCase(str) {
+                    if (!str) return "";
+                    return str
+                        .replace(/[_\-.]+/g, " ")
+                        .replace(/\s+/g, " ")
+                        .trim()
+                        .toLowerCase()
+                        .split(" ")
+                        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+                        .join(" ");
+                }
+
+                function htmlToPlainParagraphs(raw) {
+                    if (!raw) return "";
+                    const formatted = formatDescription(raw);
+                    const container = document.createElement("div");
+                    container.innerHTML = formatted;
+                    const paragraphs = [];
+
+                    Array.from(container.childNodes).forEach((node) => {
+                        if (node.nodeType === Node.TEXT_NODE) {
+                            const t = node.textContent.trim();
+                            if (t) paragraphs.push(t);
+                        } else if (node.nodeName === "P") {
+                            const t = node.textContent.trim();
+                            if (t) paragraphs.push(t);
+                        } else if (node.nodeName === "UL") {
+                            Array.from(node.querySelectorAll("li")).forEach(
+                                (li) => {
+                                    const liText = li.textContent.trim();
+                                    if (liText) paragraphs.push("- " + liText);
+                                },
+                            );
+                        }
+                    });
+
+                    return paragraphs.join("\n\n");
+                }
+
                 async function analyzeArticleData(article) {
                     const rawDesc = stripHtml(article.fullDescription);
                     const payload = {
@@ -915,10 +954,40 @@ Respond with ONLY the JSON object, no additional text.`;
                             .trim();
                         const data = JSON.parse(cleaned);
 
-                        newsTitleInput.value = data.title || "";
+                        // Normalize title: prefer the extracted title, but fall
+                        // back to a cleaned-up filename if it looks like a raw
+                        // filename or is missing/too short.
+                        let extractedTitle = (data.title || "").trim();
+                        if (
+                            !extractedTitle ||
+                            /^[\w\-.]+$/.test(extractedTitle) ||
+                            extractedTitle.toLowerCase().includes("img") ||
+                            extractedTitle.length < 3
+                        ) {
+                            if (file && file.name) {
+                                extractedTitle = file.name
+                                    .replace(/\.[^/.]+$/, "")
+                                    .replace(/[_\-.]+/g, " ");
+                            }
+                        }
+                        newsTitleInput.value = toTitleCase(extractedTitle);
+
                         newsSummaryInput.value = data.summary || "";
+
+                        // Show a readable plain-text preview in the textarea,
+                        // while keeping the nicely formatted HTML version ready
+                        // to save (so "Read more" looks good immediately,
+                        // without needing to press "Reformat with AI").
+                        const rawFull =
+                            data.fullDescription || data.summary || "";
+                        const formattedHtml = formatDescription(rawFull);
                         newsFullDescriptionInput.value =
-                            data.fullDescription || "";
+                            htmlToPlainParagraphs(rawFull);
+                        newsFullDescriptionInput.dataset.formattedHtml =
+                            formattedHtml;
+                        newsFullDescriptionInput.dataset.sourceText =
+                            newsFullDescriptionInput.value;
+
                         if (data.tag && availableTags.includes(data.tag)) {
                             newsTagInput.value = data.tag;
                         }
@@ -1244,6 +1313,8 @@ Respond with a JSON object ONLY, with the following structure:
                     document.getElementById("formTitle").textContent =
                         "Add a New Article";
                     addNewsForm.reset();
+                    delete newsFullDescriptionInput.dataset.formattedHtml;
+                    delete newsFullDescriptionInput.dataset.sourceText;
                     selectedFileName.textContent = "";
                     addFormContainer.classList.remove("hidden");
                     addFormContainer.scrollIntoView({ behavior: "smooth" });
@@ -1252,16 +1323,33 @@ Respond with a JSON object ONLY, with the following structure:
                 cancelFormBtn.addEventListener("click", () => {
                     addFormContainer.classList.add("hidden");
                     addNewsForm.reset();
+                    delete newsFullDescriptionInput.dataset.formattedHtml;
+                    delete newsFullDescriptionInput.dataset.sourceText;
                     editingIndex = -1;
                 });
 
                 addNewsForm.addEventListener("submit", (e) => {
                     e.preventDefault();
                     const articles = loadNews();
+
+                    // Prefer the pre-formatted HTML captured right after
+                    // extraction (so "Read more" shows nice paragraphs/bullets
+                    // immediately). If the user edited the textarea manually,
+                    // or there's no cached formatted version, format the
+                    // current textarea value instead.
+                    const fullDescriptionHtml =
+                        newsFullDescriptionInput.dataset.formattedHtml &&
+                        newsFullDescriptionInput.dataset.sourceText ===
+                            newsFullDescriptionInput.value
+                            ? newsFullDescriptionInput.dataset.formattedHtml
+                            : formatDescription(
+                                  newsFullDescriptionInput.value,
+                              );
+
                     const newArticle = {
                         title: newsTitleInput.value,
                         summary: newsSummaryInput.value,
-                        fullDescription: newsFullDescriptionInput.value,
+                        fullDescription: fullDescriptionHtml,
                         date: new Date().toLocaleDateString("en-US", {
                             year: "numeric",
                             month: "long",
@@ -1492,7 +1580,11 @@ Respond with a JSON object ONLY, with the following structure:
                         newsTitleInput.value = article.title;
                         newsSummaryInput.value = article.summary;
                         newsFullDescriptionInput.value =
+                            htmlToPlainParagraphs(article.fullDescription);
+                        newsFullDescriptionInput.dataset.formattedHtml =
                             article.fullDescription;
+                        newsFullDescriptionInput.dataset.sourceText =
+                            newsFullDescriptionInput.value;
                         newsTagInput.value = article.tag;
                         newsUrlInput.value = article.url || "";
                         editingIndex = index;
