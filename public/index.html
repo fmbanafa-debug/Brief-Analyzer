@@ -7,6 +7,7 @@
         <script src="https://cdn.tailwindcss.com"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link
@@ -113,31 +114,31 @@
                 <div class="flex space-x-2 flex-wrap">
                     <button
                         id="analyzeImpactBtn"
-                        class="w-full md:w-auto mt-2 md:mt-0 px-6 py-2 bg-purple-600 text-white font-medium rounded-xl hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 tr[...]"
+                        class="w-full md:w-auto mt-2 md:mt-0 px-6 py-2 bg-purple-600 text-white font-medium rounded-xl hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors"
                     >
                         Analyze Market Impact ✨
                     </button>
                     <button
                         id="selectAllBtn"
-                        class="w-full md:w-auto mt-2 md:mt-0 px-6 py-2 bg-yellow-600 text-white font-medium rounded-xl hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-yellow-500 tr[...]"
+                        class="w-full md:w-auto mt-2 md:mt-0 px-6 py-2 bg-yellow-600 text-white font-medium rounded-xl hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition-colors"
                     >
                         Select All
                     </button>
                     <button
                         id="importBtn"
-                        class="w-full md:w-auto mt-2 md:mt-0 px-6 py-2 bg-teal-600 text-white font-medium rounded-xl hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 transiti[...]"
+                        class="w-full md:w-auto mt-2 md:mt-0 px-6 py-2 bg-teal-600 text-white font-medium rounded-xl hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 transition-colors"
                     >
                         Import
                     </button>
                     <button
                         id="exportBtn"
-                        class="w-full md:w-auto mt-2 md:mt-0 px-6 py-2 bg-green-600 text-white font-medium rounded-xl hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 transition[...]"
+                        class="w-full md:w-auto mt-2 md:mt-0 px-6 py-2 bg-green-600 text-white font-medium rounded-xl hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors"
                     >
                         Export
                     </button>
                     <button
                         id="showAddFormBtn"
-                        class="w-full md:w-auto mt-2 md:mt-0 px-6 py-2 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 tr[...]"
+                        class="w-full md:w-auto mt-2 md:mt-0 px-6 py-2 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-colors"
                     >
                         Add New Article
                     </button>
@@ -451,7 +452,7 @@ Source URL: https://example.com
 
         <script>
             (function () {
-                // ─── Constants ─────────────────────────────────────────────────────��[...]
+                // ─── Constants ───────────────────────────────────────────────────────────
                 const availableTags = [
                     "AI",
                     "Entertainment",
@@ -469,8 +470,8 @@ Source URL: https://example.com
                         title: "Research and Investigational Drugs (RAID) Designation",
                         url: "",
                         summary:
-                            "A document outlining the Saudi Food & Drug Authority's (SFDA) new RAID designation program, aimed at accelerating the development and review of investigational drugs.[...]",
-                        fullDescription: `<ul class="list-disc list-inside space-y-2"><li><strong>Purpose:</strong> The RAID designation program is part of the SFDA's initiative to encourage Rese[...]
+                            "A document outlining the Saudi Food & Drug Authority's (SFDA) new RAID designation program, aimed at accelerating the development and review of investigational drugs.",
+                        fullDescription: `<ul class="list-disc list-inside space-y-2"><li><strong>Purpose:</strong> The RAID designation program is part of the SFDA's initiative to encourage Research and Development (R&D) in Saudi Arabia's pharmaceutical sector.</li><li><strong>Incentives:</strong> The program offers several benefits, including a dedicated SFDA contact point, pre-designation meetings for scientific and regulatory guidance.</li><li><strong>Eligibility:</strong> To be eligible, a product must be an investigational drug not yet authorized globally, be innovative, and have a clinical trial commitment.</li><li><strong>Process:</strong> The document details the application process, from initial submission via email to the final decision from the SFDA within a specified timeframe.</li></ul>`,
                         date: "September 18, 2025",
                         tag: "Pharma",
                     },
@@ -479,8 +480,7 @@ Source URL: https://example.com
                         url: "",
                         summary:
                             "Cenomi Retail received a notice from a major shareholder regarding the sale of a significant stake, valued at 2.5 billion riyals, to the Al Futtaim Group.",
-                        fullDescription: `<ul class="list-disc list-inside space-y-2"><li><strong>Transaction Details:</strong> A major shareholder in Cenomi Retail, Fawaz Abdulaziz Alhokair &amp[...]`
-                        ,
+                        fullDescription: `<ul class="list-disc list-inside space-y-2"><li><strong>Transaction Details:</strong> A major shareholder in Cenomi Retail, Fawaz Abdulaziz Alhokair &amp; Co., is selling 49.95% of his shares.</li><li><strong>Valuation:</strong> The stake is valued at 44 riyals per share, totaling 2.5 billion riyals.</li><li><strong>Acquirer:</strong> The shares are being acquired by the Al Futtaim Group, a prominent regional company.</li></ul>`,
                         date: "September 16, 2025",
                         tag: "Retail",
                     },
@@ -489,14 +489,13 @@ Source URL: https://example.com
                         url: "",
                         summary:
                             "Unifusion BSC is a trusted authorized representative in Saudi Arabia that helps medical device companies navigate the complexity of SFDA registration.",
-                        fullDescription: `<ul class="list-disc list-inside space-y-2"><li><strong>Services:</strong> The company provides business consulting and services for medical devices and [...]
-                        ,
+                        fullDescription: `<ul class="list-disc list-inside space-y-2"><li><strong>Services:</strong> The company provides business consulting and services for medical devices and cosmetics.</li><li><strong>Specialization:</strong> Unifusion BSC specializes in SFDA registration to ensure successful market entry for its clients.</li><li><strong>Location:</strong> The business is based in Riyadh, Saudi Arabia.</li></ul>`,
                         date: "September 16, 2025",
                         tag: "Pharma",
                     },
                 ];
 
-                // ─── DOM refs ──────────────────────────────────────────────────────[...]
+                // ─── DOM refs ────────────────────────────────────────────────────────────
                 const newsGrid = document.getElementById("newsGrid");
                 const showAddFormBtn =
                     document.getElementById("showAddFormBtn");
@@ -552,7 +551,7 @@ Source URL: https://example.com
                 let editingIndex = -1;
                 let isSelectAll = false;
 
-                // ─── Helpers ──────────────────────────────────────────────────────�[...]
+                // ─── Helpers ─────────────────────────────────────────────────────────────
                 function showMessage(message, type = "success") {
                     messageBox.textContent = message;
                     messageBox.classList.remove(
@@ -584,6 +583,57 @@ Source URL: https://example.com
                     );
                 }
 
+                async function analyzeArticleData(article) {
+                    const rawDesc = stripHtml(article.fullDescription);
+                    const payload = {
+                        contents: [{
+                            parts: [{ text: `You are a news analyst. Analyze the following news article and return a JSON object with exactly these keys:
+- "title": the article title
+- "date": the article date
+- "tag": the article category/tag
+- "summary": a concise 1-sentence summary
+- "main_theme": the central topic in 3-5 words
+- "key_points": an array of 3-5 concise key points (strings), each paraphrased — do NOT copy verbatim
+- "stakeholders": comma-separated list of main entities mentioned (companies, people, organizations)
+- "sentiment": one of Positive / Negative / Neutral
+- "market_impact": a brief 1-sentence assessment of the potential market or industry impact
+- "action_items": a brief 1-sentence suggestion of what to watch for next
+
+Article:
+Title: ${article.title}
+Date: ${article.date}
+Tag: ${article.tag}
+Summary: ${article.summary}
+Description: ${rawDesc}
+
+Respond with ONLY the JSON object.` }]
+                        }],
+                        generationConfig: { responseMimeType: "application/json" }
+                    };
+
+                    const resp = await fetch('/api/generate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const result = await resp.json();
+                    if (!resp.ok) {
+                        throw new Error(result?.error || `HTTP ${resp.status}`);
+                    }
+                    const jsonText = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (!jsonText) throw new Error('No data returned');
+                    const cleaned = jsonText.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
+                    return JSON.parse(cleaned);
+                }
+
+                function buildAnalysisCsv(data) {
+                    const keyPoints = Array.isArray(data.key_points) ? data.key_points.join('; ') : (data.key_points || '');
+                    const csvEscape = v => `"${String(v || '').replace(/"/g, '""')}"`;
+                    const headers = ['Title','Date','Tag','Summary','Main Theme','Key Points','Stakeholders','Sentiment','Market Impact','Action Items'];
+                    const values  = [data.title, data.date, data.tag, data.summary, data.main_theme, keyPoints, data.stakeholders, data.sentiment, data.market_impact, data.action_items];
+                    return [headers.map(csvEscape).join(','), values.map(csvEscape).join(',')].join('\n');
+                }
+
                 function formatDescription(raw) {
                     if (!raw) return '';
                     const plain = stripHtml(raw);
@@ -604,44 +654,6 @@ Source URL: https://example.com
                     });
                     if (inList) html += '</ul>';
                     return html;
-                }
-
-                // -- NEW HELPERS: title-case and convert formatted HTML to readable paragraphs
-                function toTitleCase(str) {
-                    if (!str) return "";
-                    return str
-                        .replace(/[_\-.]+/g, " ")
-                        .replace(/\s+/g, " ")
-                        .trim()
-                        .toLowerCase()
-                        .split(" ")
-                        .map(w => w.charAt(0).toUpperCase() + w.slice(1))
-                        .join(" ");
-                }
-
-                function htmlToPlainParagraphs(raw) {
-                    if (!raw) return "";
-                    const formatted = formatDescription(raw);
-                    const container = document.createElement("div");
-                    container.innerHTML = formatted;
-                    const paragraphs = [];
-
-                    Array.from(container.childNodes).forEach(node => {
-                        if (node.nodeType === Node.TEXT_NODE) {
-                            const t = node.textContent.trim();
-                            if (t) paragraphs.push(t);
-                        } else if (node.nodeName === "P") {
-                            const t = node.textContent.trim();
-                            if (t) paragraphs.push(t);
-                        } else if (node.nodeName === "UL") {
-                            Array.from(node.querySelectorAll("li")).forEach(li => {
-                                const liText = li.textContent.trim();
-                                if (liText) paragraphs.push("- " + liText);
-                            });
-                        }
-                    });
-
-                    return paragraphs.join("\n\n");
                 }
 
                 function getDisplayArticles() {
@@ -674,7 +686,7 @@ Source URL: https://example.com
                     });
                 }
 
-                // ─── Render ──────────────────────────────────────────────────────��[...]
+                // ─── Render ───────────────────────────────────────────────────────────────
                 function renderNews() {
                     const filteredNews = getDisplayArticles();
                     newsGrid.innerHTML = "";
@@ -701,18 +713,18 @@ Source URL: https://example.com
                     <p class="text-sm text-gray-400 my-4">${article.summary}</p>
                     <div class="mt-4 flex items-center justify-between">
                         <button class="read-more-btn text-blue-400 hover:text-blue-300 font-medium transition-colors" data-index="${index}">Read more &rarr;</button>
-                        ${article.url ? `<a href="${article.url}" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-gray-300 transition-colors text-sm font-medium">View Source</a>` : ''}
+                        ${article.url ? `<a href="${article.url}" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-gray-300 transition-colors text-sm font-medium">View Source</a>` : ""}
                         <span class="text-xs text-gray-500">${article.date}</span>
                     </div>
                     <div class="mt-4 flex space-x-2 items-center justify-end">
                         <button class="analyze-csv-btn text-gray-400 hover:text-purple-400 transition-colors" data-index="${index}" title="Analyze & Export CSV">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 pointer-events-none">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2[...]"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
                             </svg>
                         </button>
                         <button class="copy-btn text-gray-400 hover:text-white transition-colors" data-index="${index}" title="Copy article">
                             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 pointer-events-none">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125[...]"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" />
                             </svg>
                         </button>
                         <button class="edit-btn text-sm text-green-400 hover:text-green-300 font-medium transition-colors" data-index="${index}">Edit</button>
@@ -723,7 +735,7 @@ Source URL: https://example.com
                     });
                 }
 
-                // ─── Image Preprocessor ──────────────────────────────────────────────────��[...]
+                // ─── Image Preprocessor ───────────────────────────────────────────────────
                 function preprocessImage(file) {
                     return new Promise((resolve, reject) => {
                         const reader = new FileReader();
@@ -801,7 +813,19 @@ Source URL: https://example.com
                             loadingText.textContent =
                                 "Preprocessing image for analysis...";
                             base64Data = await preprocessImage(file);
-                            prompt = `You are an expert news analyst. Analyze the screenshot of a news article image carefully.\n\nIMPORTANT: This image may be a screenshot of a news article, document, or text content. Use your best vision capabilities to read and understand the content.\n\nExtract the following information as a JSON object:\n1. "title" (string): The main headline or title of the article/document. Extract exactly as shown.\n2. "summary" (string): A brief, 1-2 sentence summary of the news or content.\n3. "fullDescription" (string): An extensive description of the news in bullet points. For each point, start with a bolded keyword (using **keyword** format) followed by the description.\n4. "tag" (string): A single tag from the following list: ${availableTags.join(", ")}. Choose the most relevant tag based on the content.\n\nIf you cannot read certain parts clearly, do your best to infer from context. Focus on extracting meaningful information even if the image quality is not perfect.\n\nRespond with ONLY the JSON object, no additional text.`;
+                            prompt = `You are an expert news analyst. Analyze the screenshot of a news article image carefully.
+
+IMPORTANT: This image may be a screenshot of a news article, document, or text content. Use your best vision capabilities to read and understand the content.
+
+Extract the following information as a JSON object:
+1. "title" (string): The main headline or title of the article/document. Extract exactly as shown.
+2. "summary" (string): A brief, 1-2 sentence summary of the news or content.
+3. "fullDescription" (string): An extensive description of the news in bullet points. For each point, start with a bolded keyword (using **keyword** format) followed by the description.
+4. "tag" (string): A single tag from the following list: ${availableTags.join(", ")}. Choose the most relevant tag based on the content.
+
+If you cannot read certain parts clearly, do your best to infer from context. Focus on extracting meaningful information even if the image quality is not perfect.
+
+Respond with ONLY the JSON object, no additional text.`;
                         } else if (fileType === "application/pdf") {
                             loadingText.textContent = "Loading PDF...";
                             base64Data = await new Promise(
@@ -813,7 +837,15 @@ Source URL: https://example.com
                                     reader.readAsDataURL(file);
                                 },
                             );
-                            prompt = `You are an expert news analyst. Analyze the PDF document carefully.\n\nExtract the following information as a JSON object:\n1. "title" (string): The main headline or title of the document.\n2. "summary" (string): A brief, 1-2 sentence summary of the news or content.\n3. "fullDescription" (string): An extensive description in bullet points. For each point, start with a bolded keyword (using **keyword** format) followed by the description.\n4. "tag" (string): A single tag from the following list: ${availableTags.join(", ")}. Choose the most relevant tag.\n\nRespond with ONLY the JSON object, no additional text.`;
+                            prompt = `You are an expert news analyst. Analyze the PDF document carefully.
+
+Extract the following information as a JSON object:
+1. "title" (string): The main headline or title of the document.
+2. "summary" (string): A brief, 1-2 sentence summary of the news or content.
+3. "fullDescription" (string): An extensive description in bullet points. For each point, start with a bolded keyword (using **keyword** format) followed by the description.
+4. "tag" (string): A single tag from the following list: ${availableTags.join(", ")}. Choose the most relevant tag.
+
+Respond with ONLY the JSON object, no additional text.`;
                         } else {
                             showMessage(
                                 "Unsupported file type. Please upload an image or PDF.",
@@ -883,27 +915,10 @@ Source URL: https://example.com
                             .trim();
                         const data = JSON.parse(cleaned);
 
-                        // ---- Modified: normalize title and provide readable fullDescription preview + formatted HTML storage ----
-                        let extractedTitle = (data.title || "").trim();
-
-                        // If looks like filename or is too short/garbled, fallback to file name (without extension)
-                        if (!extractedTitle || /^[\w\-.]+$/.test(extractedTitle) || extractedTitle.toLowerCase().includes("img") || extractedTitle.length < 3) {
-                            if (file && file.name) {
-                                extractedTitle = file.name.replace(/\.[^/.]+$/, "").replace(/[_\-.]+/g, " ");
-                            }
-                        }
-
-                        newsTitleInput.value = toTitleCase(extractedTitle);
-
-                        // Summary
+                        newsTitleInput.value = data.title || "";
                         newsSummaryInput.value = data.summary || "";
-
-                        // Full description: create a readable textarea preview and store formatted HTML for saving/rendering
-                        const rawFull = data.fullDescription || data.summary || "";
-                        const formattedHtml = formatDescription(rawFull);
-                        newsFullDescriptionInput.value = htmlToPlainParagraphs(rawFull);
-                        newsFullDescriptionInput.dataset.formattedHtml = formattedHtml;
-
+                        newsFullDescriptionInput.value =
+                            data.fullDescription || "";
                         if (data.tag && availableTags.includes(data.tag)) {
                             newsTagInput.value = data.tag;
                         }
@@ -927,7 +942,7 @@ Source URL: https://example.com
                     }
                 }
 
-                // ─── Generate Headline ───────────────────────────────────────────────────[...]
+                // ─── Generate Headline ─────────────────────────────────────────────────────
                 async function handleGenerateHeadline() {
                     const summary = newsSummaryInput.value.trim();
                     if (!summary) {
@@ -963,7 +978,6 @@ Source URL: https://example.com
                         const headline =
                             result?.candidates?.[0]?.content?.parts?.[0]?.text;
                         if (headline) {
-                            // Keep existing behaviour but ensure it's trimmed and remove wrapping quotes
                             newsTitleInput.value = headline
                                 .trim()
                                 .replace(/^"|"$/g, "");
@@ -982,14 +996,29 @@ Source URL: https://example.com
                     }
                 }
 
-                // ─── Market Analysis ───────────────────────────────────────────────────��[...]
+                // ─── Market Analysis ───────────────────────────────────────────────────────
                 async function handleMarketAnalysis(articles) {
                     const articlesText = articles
                         .map((a) => `Title: ${a.title}\nSummary: ${a.summary}`)
                         .join("\n\n---\n\n");
                     const systemPrompt =
-                        "You are an expert business analyst and historian. Your task is to analyze a collection of news articles, identify the central theme or event, and provide a comprehensive marke[...]";
-                    const userQuery = `Analyze the provided news articles. What is the main story here? Summarize the situation and then provide a brief 'Historical Context' section that mentions 1-2 [...]\n\nNews Articles:\n${articlesText}\n\nRespond with a JSON object ONLY, with the following structure:\n{\n  "mainInsight": "A single-paragraph summary explaining the core theme connecting the selected articles.",\n  "historicalContext": [\n    {\n      "event": "A brief description of a similar historical event.",\n      "relevance": "A short explanation of why this past event is relevant to the current news."\n    }\n  ],\n  "keyTakeaway": "A single, actionable takeaway or something to watch for in the future based on the analysis."\n}`;
+                        "You are an expert business analyst and historian. Your task is to analyze a collection of news articles, identify the central theme or event, and provide a comprehensive market analysis with historical context.";
+                    const userQuery = `Analyze the provided news articles. What is the main story here? Summarize the situation and then provide a brief 'Historical Context' section that mentions 1-2 similar past events.
+
+News Articles:
+${articlesText}
+
+Respond with a JSON object ONLY, with the following structure:
+{
+  "mainInsight": "A single-paragraph summary explaining the core theme connecting the selected articles.",
+  "historicalContext": [
+    {
+      "event": "A brief description of a similar historical event.",
+      "relevance": "A short explanation of why this past event is relevant to the current news."
+    }
+  ],
+  "keyTakeaway": "A single, actionable takeaway or something to watch for in the future based on the analysis."
+}`;
 
                     const payload = {
                         contents: [{ parts: [{ text: userQuery }] }],
@@ -1021,9 +1050,147 @@ Source URL: https://example.com
                             .replace(/^```json\s*/i, "")
                             .replace(/```\s*$/, "")
                             .trim();
-[...] 
+                        renderAnalysisResults(JSON.parse(cleaned));
+                    } catch (err) {
+                        console.error("Market analysis error:", err);
+                        analysisResult.innerHTML = `<p class="text-red-400">An error occurred during analysis: ${err.message || err}</p>`;
+                    }
+                }
 
-                // Event wiring and form handlers
+                function renderAnalysisResults(data) {
+                    if (!data) {
+                        analysisResult.innerHTML = `<p class="text-red-400">Failed to parse analysis results.</p>`;
+                        return;
+                    }
+                    let html = `<div class="space-y-6">`;
+                    if (data.mainInsight) {
+                        html += `<div><h4 class="text-lg font-bold text-purple-400 mb-2">Main Insight</h4><p class="text-gray-300">${data.mainInsight}</p></div>`;
+                    }
+                    if (
+                        data.historicalContext &&
+                        data.historicalContext.length > 0
+                    ) {
+                        html += `<div><h4 class="text-lg font-bold text-purple-400 mb-2">Historical Context</h4><div class="space-y-4">`;
+                        data.historicalContext.forEach((ctx) => {
+                            html += `<div class="bg-gray-700 p-4 rounded-lg"><p class="font-bold text-white">${ctx.event}</p><p class="text-sm text-gray-400 mt-2">${ctx.relevance}</p></div>`;
+                        });
+                        html += `</div></div>`;
+                    }
+                    if (data.keyTakeaway) {
+                        html += `<div><h4 class="text-lg font-bold text-purple-400 mb-2">Key Takeaway</h4><p class="text-gray-300">${data.keyTakeaway}</p></div>`;
+                    }
+                    html += `</div>`;
+                    analysisResult.innerHTML = html;
+                }
+
+                // ─── Export ────────────────────────────────────────────────────────────────
+                function handleExport() {
+                    const selectedCheckboxes = document.querySelectorAll(
+                        '.news-card input[type="checkbox"]:checked',
+                    );
+                    if (selectedCheckboxes.length === 0) {
+                        showMessage(
+                            "Please select at least one article to export.",
+                            "error",
+                        );
+                        return;
+                    }
+                    const displayArticles = getDisplayArticles();
+                    const articlesToExport = Array.from(selectedCheckboxes)
+                        .map((cb) => {
+                            const card = cb.closest(".news-card");
+                            const index = parseInt(card.dataset.index, 10);
+                            return displayArticles[index];
+                        })
+                        .filter(Boolean);
+
+                    let exportContent = `Banafa's Daily Brief - Exported Articles\n\n`;
+                    articlesToExport.forEach((article) => {
+                        exportContent += `---\nTitle: ${article.title}\nDate: ${article.date}\nTag: ${article.tag}\nSummary: ${article.summary}\n${article.url ? `Source URL: ${article.url}\n` : ""}\n`;
+                    });
+
+                    const blob = new Blob([exportContent], {
+                        type: "text/plain;charset=utf-8",
+                    });
+                    const a = document.createElement("a");
+                    a.href = URL.createObjectURL(blob);
+                    a.download = "daily-brief.txt";
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    showMessage(
+                        `Successfully exported ${articlesToExport.length} article(s)!`,
+                    );
+                }
+
+                // ─── Import ────────────────────────────────────────────────────────────────
+                function handleImport(importText) {
+                    if (!importText.trim()) {
+                        showMessage("Import field is empty.", "error");
+                        return;
+                    }
+                    const blocks = importText
+                        .split("---")
+                        .filter((b) => b.trim());
+                    if (blocks.length === 0) {
+                        showMessage(
+                            "No valid articles found in the provided text.",
+                            "error",
+                        );
+                        return;
+                    }
+
+                    const newArticles = [];
+                    let malformed = 0;
+
+                    blocks.forEach((block) => {
+                        const article = { fullDescription: "" };
+                        block
+                            .trim()
+                            .split("\n")
+                            .forEach((line) => {
+                                if (line.startsWith("Title: "))
+                                    article.title = line.substring(7);
+                                else if (line.startsWith("Date: "))
+                                    article.date = line.substring(6);
+                                else if (line.startsWith("Tag: "))
+                                    article.tag = line.substring(5);
+                                else if (line.startsWith("Summary: "))
+                                    article.summary = line.substring(9);
+                                else if (line.startsWith("Source URL: "))
+                                    article.url = line.substring(12);
+                            });
+                        if (
+                            article.title &&
+                            article.summary &&
+                            article.date &&
+                            article.tag
+                        ) {
+                            newArticles.push(article);
+                        } else {
+                            malformed++;
+                        }
+                    });
+
+                    if (newArticles.length > 0) {
+                        saveNews([...newArticles, ...loadNews()]);
+                        renderNews();
+                        showMessage(
+                            `${newArticles.length} article(s) imported successfully!`,
+                        );
+                    }
+                    if (malformed > 0)
+                        showMessage(
+                            `${malformed} article(s) had an invalid format and were skipped.`,
+                            "error",
+                        );
+                    importModal.classList.add("hidden");
+                    importDataTextarea.value = "";
+                }
+
+                // ─── Event Listeners ──────────────────────────────────────────────────────
+
+                // Drag & drop
                 dropArea.addEventListener("dragover", (e) => {
                     e.preventDefault();
                     dropArea.classList.add("active");
@@ -1094,7 +1261,7 @@ Source URL: https://example.com
                     const newArticle = {
                         title: newsTitleInput.value,
                         summary: newsSummaryInput.value,
-                        fullDescription: newsFullDescriptionInput.dataset.formattedHtml || formatDescription(newsFullDescriptionInput.value),
+                        fullDescription: newsFullDescriptionInput.value,
                         date: new Date().toLocaleDateString("en-US", {
                             year: "numeric",
                             month: "long",
@@ -1139,10 +1306,319 @@ Source URL: https://example.com
                             <p><strong>Date:</strong> ${article.date}</p>
                             <p class="mt-4"><strong>Summary:</strong> ${article.summary}</p>
                             <div class="mt-4">
-`;
+                                <div class="flex items-center justify-between mb-2">
+                                    <strong>Full Description:</strong>
+                                    <button id="reformatBtn" class="px-3 py-1 text-xs bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">Reformat with AI ✨</button>
+                                </div>
+                                <div id="modalDescriptionBody" class="text-gray-300 space-y-1">${formatDescription(article.fullDescription)}</div>
+                            </div>
+                            ${article.url ? `<p class="mt-4"><a href="${article.url}" target="_blank" rel="noopener noreferrer" class="text-blue-400 hover:text-blue-300">View Source</a></p>` : ""}
+                        `;
+                        modal.classList.remove("hidden");
 
-                // ... rest of file unchanged ...
+                        document.getElementById('reformatBtn').addEventListener('click', async function () {
+                            const btn = this;
+                            const descBody = document.getElementById('modalDescriptionBody');
+                            btn.disabled = true;
+                            btn.textContent = 'Reformatting...';
+                            const rawText = stripHtml(article.fullDescription);
+                            const payload = {
+                                contents: [{
+                                    parts: [{ text: `You are a news editor. Rewrite the following article description as clean, well-organized bullet points. Each bullet should start with a bold keyword followed by a colon and the key point. Do not copy the text verbatim — rephrase clearly and concisely. Respond with only the bullet list, one item per line, each starting with "- **Keyword**: description".\n\nText:\n${rawText}` }]
+                                }]
+                            };
+                            try {
+                                const resp = await fetch('/api/generate', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify(payload)
+                                });
+                                const result = await resp.json();
+                                const text = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+                                if (text) {
+                                    descBody.innerHTML = formatDescription(text.trim());
+                                    btn.textContent = 'Reformatted ✓';
+                                } else {
+                                    btn.textContent = 'Failed — try again';
+                                    btn.disabled = false;
+                                }
+                            } catch (err) {
+                                btn.textContent = 'Failed — try again';
+                                btn.disabled = false;
+                            }
+                        });
+                    }
 
+                    if (target.classList.contains("analyze-csv-btn")) {
+                        const btn = target;
+                        const selectedCheckboxes = document.querySelectorAll(
+                            '.news-card input[type="checkbox"]:checked',
+                        );
+
+                        btn.classList.add("opacity-50", "cursor-wait");
+
+                        if (selectedCheckboxes.length > 1) {
+                            // Bulk mode: analyze every selected article and zip the CSVs together.
+                            const displayArticles = getDisplayArticles();
+                            const articles = Array.from(selectedCheckboxes)
+                                .map((cb) => {
+                                    const card = cb.closest(".news-card");
+                                    const idx = parseInt(card.dataset.index, 10);
+                                    return displayArticles[idx];
+                                })
+                                .filter(Boolean);
+
+                            const zip = new JSZip();
+                            const usedNames = new Set();
+                            let successCount = 0;
+                            let failCount = 0;
+
+                            for (let i = 0; i < articles.length; i++) {
+                                const article = articles[i];
+                                showMessage(
+                                    `Analyzing article ${i + 1} of ${articles.length}…`,
+                                );
+                                try {
+                                    const data = await analyzeArticleData(article);
+                                    const csvContent = buildAnalysisCsv(data);
+                                    let safeTitle = (
+                                        data.title ||
+                                        article.title ||
+                                        `article_${i + 1}`
+                                    )
+                                        .replace(/[^a-z0-9]/gi, "_")
+                                        .substring(0, 40);
+                                    let fileName = `${safeTitle}.csv`;
+                                    let suffix = 2;
+                                    while (usedNames.has(fileName)) {
+                                        fileName = `${safeTitle}_${suffix}.csv`;
+                                        suffix++;
+                                    }
+                                    usedNames.add(fileName);
+                                    zip.file(fileName, csvContent);
+                                    successCount++;
+                                } catch (err) {
+                                    failCount++;
+                                    zip.file(
+                                        `FAILED_${article.title.replace(/[^a-z0-9]/gi, "_").substring(0, 30)}.txt`,
+                                        `Analysis failed: ${err.message || err}`,
+                                    );
+                                }
+                            }
+
+                            try {
+                                const zipBlob = await zip.generateAsync({ type: "blob" });
+                                const a = document.createElement("a");
+                                a.href = URL.createObjectURL(zipBlob);
+                                a.download = `analysis_${articles.length}_articles.zip`;
+                                document.body.appendChild(a);
+                                a.click();
+                                document.body.removeChild(a);
+                                showMessage(
+                                    failCount > 0
+                                        ? `Zip downloaded: ${successCount} succeeded, ${failCount} failed.`
+                                        : `Zip downloaded with ${successCount} article analyses!`,
+                                );
+                            } catch (err) {
+                                showMessage(
+                                    "Failed to create zip: " + (err.message || err),
+                                    "error",
+                                );
+                            } finally {
+                                btn.classList.remove("opacity-50", "cursor-wait");
+                            }
+                            return;
+                        }
+
+                        // Single-article mode.
+                        const index   = parseInt(target.dataset.index, 10);
+                        const article = getDisplayArticles()[index];
+                        showMessage("Analyzing article — CSV will download shortly…");
+
+                        try {
+                            const data = await analyzeArticleData(article);
+                            const csvContent = buildAnalysisCsv(data);
+
+                            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                            const a    = document.createElement('a');
+                            a.href     = URL.createObjectURL(blob);
+                            const safeTitle = (data.title || 'article').replace(/[^a-z0-9]/gi, '_').substring(0, 40);
+                            a.download = `analysis_${safeTitle}.csv`;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            showMessage('Analysis exported as CSV!');
+                        } catch (err) {
+                            showMessage('Analysis failed: ' + (err.message || err), 'error');
+                        } finally {
+                            btn.classList.remove("opacity-50", "cursor-wait");
+                        }
+                    }
+
+                    if (target.classList.contains("copy-btn")) {
+                        const index   = parseInt(target.dataset.index, 10);
+                        const article = getDisplayArticles()[index];
+                        const text    = `${article.title}\n\n${article.summary}${article.url ? '\n\n' + article.url : ''}`;
+                        navigator.clipboard.writeText(text).then(() => {
+                            showMessage('Article copied to clipboard!');
+                        }).catch(() => {
+                            showMessage('Failed to copy article.', 'error');
+                        });
+                    }
+
+                    if (target.classList.contains("delete-btn")) {
+                        const index = parseInt(target.dataset.index, 10);
+                        if (
+                            confirm(
+                                "Are you sure you want to delete this article?",
+                            )
+                        ) {
+                            const articles = loadNews();
+                            const displayArticles = getDisplayArticles();
+                            const article = displayArticles[index];
+                            const actualIndex = articles.findIndex(
+                                (a) => a.title === article.title,
+                            );
+                            articles.splice(actualIndex, 1);
+                            saveNews(articles);
+                            renderNews();
+                            showMessage("Article deleted successfully!");
+                        }
+                    }
+
+                    if (target.classList.contains("edit-btn")) {
+                        const index = parseInt(target.dataset.index, 10);
+                        const article = getDisplayArticles()[index];
+                        newsTitleInput.value = article.title;
+                        newsSummaryInput.value = article.summary;
+                        newsFullDescriptionInput.value =
+                            article.fullDescription;
+                        newsTagInput.value = article.tag;
+                        newsUrlInput.value = article.url || "";
+                        editingIndex = index;
+                        document.getElementById("formTitle").textContent =
+                            "Edit Article";
+                        addFormContainer.classList.remove("hidden");
+                        addFormContainer.scrollIntoView({ behavior: "smooth" });
+                    }
+                });
+
+                closeModalBtn.addEventListener("click", () =>
+                    modal.classList.add("hidden"),
+                );
+                modal.addEventListener("click", (e) => {
+                    if (e.target === modal) modal.classList.add("hidden");
+                });
+
+                document
+                    .getElementById("exportImageBtn")
+                    .addEventListener("click", async function () {
+                        const btn = this;
+                        const modalCard = document.getElementById("modalCard");
+                        const originalMaxHeight = modalContent.style.maxHeight;
+                        const originalOverflow = modalContent.style.overflowY;
+                        const originalClasses = modalContent.className;
+
+                        btn.classList.add("opacity-50", "cursor-wait");
+                        showMessage("Preparing image…");
+
+                        // Temporarily expand the scrollable content so the full
+                        // (currently-hidden/scrolled) text is captured.
+                        modalContent.classList.remove(
+                            "overflow-y-auto",
+                            "max-h-[70vh]",
+                        );
+                        modalContent.style.maxHeight = "none";
+                        modalContent.style.overflowY = "visible";
+
+                        try {
+                            // Give the browser a tick to reflow before capture.
+                            await new Promise((r) => setTimeout(r, 50));
+
+                            const canvas = await html2canvas(modalCard, {
+                                backgroundColor: "#1f2937",
+                                scale: 2,
+                                useCORS: true,
+                            });
+
+                            const dataUrl = canvas.toDataURL("image/png");
+                            const a = document.createElement("a");
+                            const safeTitle = (
+                                modalTitle.textContent || "article"
+                            )
+                                .replace(/[^a-z0-9]/gi, "_")
+                                .substring(0, 50);
+                            a.href = dataUrl;
+                            a.download = `${safeTitle}.png`;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            showMessage("Image downloaded!");
+                        } catch (err) {
+                            showMessage(
+                                "Failed to export image: " +
+                                    (err.message || err),
+                                "error",
+                            );
+                        } finally {
+                            modalContent.className = originalClasses;
+                            modalContent.style.maxHeight = originalMaxHeight;
+                            modalContent.style.overflowY = originalOverflow;
+                            btn.classList.remove(
+                                "opacity-50",
+                                "cursor-wait",
+                            );
+                        }
+                    });
+
+                selectAllBtn.addEventListener("click", () => {
+                    const checkboxes = document.querySelectorAll(
+                        '.news-card input[type="checkbox"]',
+                    );
+                    isSelectAll = !isSelectAll;
+                    checkboxes.forEach((cb) => (cb.checked = isSelectAll));
+                    selectAllBtn.textContent = isSelectAll
+                        ? "Deselect All"
+                        : "Select All";
+                });
+
+                exportBtn.addEventListener("click", handleExport);
+
+                importBtn.addEventListener("click", () =>
+                    importModal.classList.remove("hidden"),
+                );
+                cancelImportBtn.addEventListener("click", () => {
+                    importModal.classList.add("hidden");
+                    importDataTextarea.value = "";
+                });
+                confirmImportBtn.addEventListener("click", () =>
+                    handleImport(importDataTextarea.value),
+                );
+
+                analyzeImpactBtn.addEventListener("click", () => {
+                    const articles = getDisplayArticles();
+                    if (articles.length === 0) {
+                        showMessage("No articles to analyze.", "error");
+                        return;
+                    }
+                    analysisResult.innerHTML = `<div class="text-center text-blue-400 py-8"><div class="animate-spin inline-block text-2xl">⏳</div><p class="mt-2">Analyzing articles...</p></div>`;
+                    analysisModal.classList.remove("hidden");
+                    handleMarketAnalysis(articles);
+                });
+                closeAnalysisModalBtn.addEventListener("click", () =>
+                    analysisModal.classList.add("hidden"),
+                );
+                analysisModal.addEventListener("click", (e) => {
+                    if (e.target === analysisModal)
+                        analysisModal.classList.add("hidden");
+                });
+
+                tagFilter.addEventListener("change", renderNews);
+                searchInput.addEventListener("input", renderNews);
+
+                // ─── Init ─────────────────────────────────────────────────────────────────
+                populateTags();
+                renderNews();
             })();
         </script>
     </body>
